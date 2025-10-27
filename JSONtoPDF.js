@@ -75,39 +75,8 @@ function convert(req, res) {
     //Description
     if (queryValue.description) doc.font(FONT).fontSize(12).text(queryValue.description)
 
-    //Functions to create key value pair
-    const childKeyValue = (childKey, childValue, colSpan, first) => {
-        if (Array.isArray(value)){
-            
-        } else if (typeof childValue === 'object') {
-            const rowSpan = Object.keys(childValue).length
-            if (first) td.at(-1).push({rowSpan, text: childKey})
-            Object.keys(childValue).forEach( (grandChildKey, index) => {
-                childKeyValue(grandChildKey, childValue[grandChildKey], colSpan - 1, index === 0)
-            })
-        } else {
-            
-        }
-    }
-    const createKeyValue = (key, value, colSpan) => {
-        if (Array.isArray(value)){
-            const rowSpan = value.length
-            td.push([{ rowSpan, text: key }])
-            value.forEach( (element, index) => {
-                childKeyValue(index + 1, element, colSpan - 1, (index === 0))
-            });
-        } else if (typeof value === 'object') {
-            const rowSpan = value.length
-        } else {
-            td.push([key, value])
-        }
-    }
-
     //Build the table data
     const td = []
-    for (const key in data) {
-        createKeyValue(key, data[key], maxDepth, true)
-    }
     //Create the table
     doc.table({
         data: td
