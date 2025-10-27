@@ -61,26 +61,35 @@ function convert(req, res) {
     if (queryValue.description) doc.font(FONT).fontSize(11).text(queryValue.description)
 
     //Function to create key value pair
-    const childKeyValue = (key, value, colSpan) => {
-        if (typeof value === 'object') {
-            for (const childKey in value) {
-                childKeyValue(childKey, value[childKey])
+    const childKeyValue = (childKey, childValue, colSpan) => {
+        if (Array.isArray(value)){
+            const rowSpan = value.length
+            td.push([{ rowSpan, text: key }, { colSpan, text: value[0] }])
+            value.forEach(element => {
+                td.push([element])
+            })
+        } else if (typeof childValue === 'object') {
+            for (const grandchildKey in childValue) {
+                childKeyValue(grandchildKey, childValue[childKey], colSpan - 1)
             }
         } else {
-
+            td.push([key, { colSpan, text: value}])
         }
     }
 
-    const createKeyValue = (key, value) => {
-        if (typeof value === 'object') {
+    const createKeyValue = (key, value, colSpan) => {
+        if (Array.isArray(value)){
+            const rowSpan = value.length
+            td.push([{ rowSpan, text: key }, { colSpan, text: value[0] }])
+            value.forEach(element => {
+                td.push([element])
+            })
+        } else if (typeof value === 'object') {
             for (const childKey in value) {
-                childKeyValue(childKey, value[childKey], )
+                childKeyValue(childKey, value[childKey], colSpan - 1)
             }
-        } 
-        else if (Array.isArray(value)){
-
         } else {
-
+            td.push([key, { colSpan, text: value}])
         }
     }
 
@@ -90,7 +99,7 @@ function convert(req, res) {
     const td = []
     //Table data
     for (const key in data) {
-        createKeyValue(key, data[key])
+        createKeyValue(key, data[key], maxDepth)
     }
     doc.table({
         data: td

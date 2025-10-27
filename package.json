@@ -11,7 +11,13 @@
     "url": "git+https://github.com/Realxeng/JSONtoPDF.git"
   },
   "license": "ISC",
-  "author": "Realxeng",
+  "author": {
+    "name": "Realxeng"
+  },
+  "contributors": [
+    {"name": "Stanley"},
+    {"name": "Marvin"}
+  ],
   "type": "commonjs",
   "main": "server.js",
   "scripts": {
