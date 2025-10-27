@@ -7,7 +7,7 @@ const app = express()
 app.use(express.json())
 
 //Route to convert JSON to PDF
-app.use('/jsontopdf', JSONtoPDF)
+app.post('/jsontopdf', JSONtoPDF)
 
 //Unknown route
 app.use('/', (req, res) => {

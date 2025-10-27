@@ -21,6 +21,7 @@
   "dependencies": {
     "express": "^5.1.0",
     "joi": "^18.0.1",
+    "object-depth": "^0.0.3",
     "pdfkit": "^0.17.2"
   },
   "devDependencies": {
