@@ -78,31 +78,41 @@ function convert(req, res) {
 
     //Function to traverse the data
     const traverseJSON = (obj, colSpan, first) => {
-        if (obj && typeof obj === 'object') {
-            //Arrays
-            if (Array.isArray(obj)) {
-                obj.forEach((value, index) => {
+        //Arrays
+        if (Array.isArray(obj)) {
+            obj.forEach((value, index) => {
+                if (typeof value === 'object') {
                     const rowSpan = Object.keys(flatten(value)).length;
-                    !td.length ? td.push([{ rowSpan, text: index + 1}]) 
-                               : index === 0 ? td.at(-1).push({ rowSpan, text: index })
-                                             : td.push([{ rowSpan, text: index }]);
+                    !td.length ? td.push([{ rowSpan, text: index + 1 }])
+                        : index === 0 ? td.at(-1).push({ rowSpan, text: index + 1 })
+                            : td.push([{ rowSpan, text: index + 1 }]);
                     traverseJSON(value, colSpan - 1);
-                });
-            }
-            //Objects
-            else {
-                Object.entries(obj).forEach(([key, value], index) => {
-                    const rowSpan = Object.keys(flatten(value)).length
-                    first ? td.push([{ rowSpan, text: key }]) 
-                          : index === 0 ? td.at(-1).push({ rowSpan, text: key })
-                                        : td.push([{ rowSpan, text: key }])
-                    traverseJSON(value, colSpan - 1)
-                })
-            }
+                }
+                //Value
+                else {
+                    colSpan--
+                    td.at(-1).push(index)
+                    td.at(-1).push({ colSpan, text: value });
+                }
+            });
         }
-        //value
+        //Objects
         else {
-           td.at(-1).push({colSpan, obj});
+            Object.entries(obj).forEach(([key, value], index) => {
+                if (typeof value === 'object') {
+                    const rowSpan = Object.keys(flatten(value)).length
+                    !td.length ? td.push([{ rowSpan, text: key }])
+                        : index === 0 ? td.at(-1).push({ rowSpan, text: key })
+                            : td.push([{ rowSpan, text: key }])
+                    traverseJSON(value, colSpan - 1)
+                }
+                //Value
+                else {
+                    colSpan--
+                    td.at(-1).push(key)
+                    td.at(-1).push({ colSpan, text: value });
+                }
+            })
         }
     }
 
