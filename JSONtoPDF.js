@@ -2,6 +2,7 @@ const PDF = require('pdfkit')
 const joi = require('joi')
 const depth = require('object-depth')
 const { flatten } = require('flat')
+const util = require('util')
 
 //Create the query schema
 const schema = joi.object({
@@ -45,7 +46,7 @@ function convert(req, res) {
         return res.status(400).json({ message: "No JSON to parse" })
     }
     //Find the max depth
-    const maxDepth = depth(data)
+    const maxDepth = depth(data) + 1
     if (!maxDepth || maxDepth < 1) {
         console.log("Data: ")
         console.log(data)
@@ -58,9 +59,8 @@ function convert(req, res) {
         margins: queryValue.margins
     })
     //Create the doc metadata
-    doc.info({
-        title: queryValue.title
-    })
+    //doc.info = {...doc.info, title: queryValue.title}
+
     //Set the response header
     res.setHeader("Content-Type", "application/pdf")
     res.setHeader("Content-Disposition", `inline; filename=form.pdf`)
@@ -72,26 +72,36 @@ function convert(req, res) {
      * Build the PDF
      */
     //Title
-    if (queryValue.title) doc.font(FONT).fontSize(18).text(queryValue.title, { align: 'center' })
+    if (queryValue.title) {
+        doc.font(FONT).fontSize(24).text(queryValue.title, { align: 'center' })
+        doc.text('\n')
+    }
     //Description
     if (queryValue.description) doc.font(FONT).fontSize(12).text(queryValue.description);
 
+    //Build the table data
+    let td = []
+
     //Function to traverse the data
-    const traverseJSON = (obj, colSpan, first) => {
+    const traverseJSON = (obj, depth) => {
         //Arrays
         if (Array.isArray(obj)) {
             obj.forEach((value, index) => {
                 if (typeof value === 'object') {
-                    const rowSpan = Object.keys(flatten(value)).length;
+                    const rowSpan = Object.keys(flatten(value)).length
                     !td.length ? td.push([{ rowSpan, text: index + 1 }])
                         : index === 0 ? td.at(-1).push({ rowSpan, text: index + 1 })
                             : td.push([{ rowSpan, text: index + 1 }]);
-                    traverseJSON(value, colSpan - 1);
+                    traverseJSON(value, depth - 1);
                 }
                 //Value
                 else {
-                    colSpan--
-                    td.at(-1).push(index)
+                    const colSpan = depth - 1
+                    if (depth === maxDepth || index > 0){
+                         td.push([{ text: index }])
+                    } else if (index === 0) {
+                        td.at(-1).push({ text: index })
+                    }
                     td.at(-1).push({ colSpan, text: value });
                 }
             });
@@ -104,26 +114,35 @@ function convert(req, res) {
                     !td.length ? td.push([{ rowSpan, text: key }])
                         : index === 0 ? td.at(-1).push({ rowSpan, text: key })
                             : td.push([{ rowSpan, text: key }])
-                    traverseJSON(value, colSpan - 1)
+                    traverseJSON(value, depth - 1)
                 }
                 //Value
                 else {
-                    colSpan--
-                    td.at(-1).push(key)
+                    const colSpan = depth - 1
+                    if (depth === maxDepth || index > 0){
+                        td.push([{ text: key }])
+                    } else if (index === 0) {
+                        td.at(-1).push({ text: key })
+                    }
                     td.at(-1).push({ colSpan, text: value });
                 }
             })
         }
     }
 
-    //Build the table data
-    let td = []
-    traverseJSON(data, maxDepth, first = true)
+    traverseJSON(data, maxDepth)
+
+    //console.log(util.inspect(td, false, null, color = true))
 
     //Create the table
+    doc.font(FONT).fontSize(12)
     doc.table({
+        defaultStyle: {
+        },
         data: td
     })
+    doc.text('\n')
+
     //Remarks
     if (queryValue.remarks) doc.font(FONT).fontSize(12).text(queryValue.remarks)
 
