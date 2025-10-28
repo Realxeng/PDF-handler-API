@@ -1,6 +1,7 @@
 const PDF = require('pdfkit')
 const joi = require('joi')
 const depth = require('object-depth')
+const { flatten } = require('flat')
 
 //Create the query schema
 const schema = joi.object({
@@ -73,15 +74,42 @@ function convert(req, res) {
     //Title
     if (queryValue.title) doc.font(FONT).fontSize(18).text(queryValue.title, { align: 'center' })
     //Description
-    if (queryValue.description) doc.font(FONT).fontSize(12).text(queryValue.description)
+    if (queryValue.description) doc.font(FONT).fontSize(12).text(queryValue.description);
+
+    //Function to traverse the data
+    const traverseJSON = (obj, parentKey = '', first) => {
+        if (obj && typeof obj === 'object') {
+            //Arrays
+            if (Array.isArray(obj)) {
+                obj.forEach((value, index) => {
+                    
+                });
+            }
+            //Objects
+            else {
+                Object.entries(obj).forEach(([key, value], index) => {
+                    const rowSpan = Object.keys(flatten(value)).length
+                    first ? td.push([{ rowSpan, text: key }]) 
+                          : index === 0 ? td.at(-1).push({ rowSpan, text: key })
+                                        : td.push([{ rowSpan, text: key }])
+                    traverseJSON(value)
+                })
+            }
+        }
+        //value
+        else {
+           td.at(-1).push(obj);
+        }
+    }
 
     //Build the table data
-    const td = []
+    let td = []
+    traverseJSON(data, first = true)
+
     //Create the table
     doc.table({
         data: td
     })
-
     //Remarks
     if (queryValue.remarks) doc.font(FONT).fontSize(12).text(queryValue.remarks)
 
