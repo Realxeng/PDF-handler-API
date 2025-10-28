@@ -24,10 +24,15 @@ const schema = joi.object({
     ).default("A4"),
     margin: joi.number().integer(),
     margins: joi.object({
-        top: joi.number().min(0).default(50),
-        bottom: joi.number().min(0).default(50),
-        left: joi.number().default(50),
-        right: joi.number().default(50),
+        top: joi.number().min(0),
+        bottom: joi.number().min(0),
+        left: joi.number(),
+        right: joi.number(),
+    }).default({
+        top: 50,
+        bottom: 50,
+        left: 50,
+        right: 50
     }),
     layout: joi.string().valid("potrait", "landscape"),
     font: joi.string().valid(
@@ -66,7 +71,7 @@ function convert(req, res) {
     const doc = new PDF({
         ...pageOptions,
         info: {
-            title: queryValue.title
+            Title: queryValue.title
         }
     })
     //Create the doc metadata
@@ -85,7 +90,7 @@ function convert(req, res) {
     //Title
     if (queryValue.title) {
         doc.font(FONT).fontSize(24).text(queryValue.title, { align: 'center' })
-        doc.text('\n')
+        doc.fontSize(12).text('\n')
     }
     //Description
     if (queryValue.description) doc.font(FONT).fontSize(12).text(queryValue.description);
@@ -100,16 +105,16 @@ function convert(req, res) {
             obj.forEach((value, index) => {
                 if (typeof value === 'object') {
                     const rowSpan = Object.keys(flatten(value)).length
-                    !td.length ? td.push([{ rowSpan, text: index + 1 }])
-                        : index === 0 ? td.at(-1).push({ rowSpan, text: index + 1 })
-                            : td.push([{ rowSpan, text: index + 1 }]);
+                    !td.length ? td.push([{ rowSpan, align: { x:'center', y: 'center' }, text: index + 1 }])
+                        : index === 0 ? td.at(-1).push({ rowSpan, align: { x:'center', y: 'center' }, text: index + 1 })
+                            : td.push([{ rowSpan, align: { x:'center', y: 'center' }, text: index + 1 }]);
                     traverseJSON(value, depth - 1);
                 }
                 //Value
                 else {
                     const colSpan = depth - 1
-                    if (depth === maxDepth || index > 0){
-                         td.push([{ text: index }])
+                    if (depth === maxDepth || index > 0) {
+                        td.push([{ text: index }])
                     } else if (index === 0) {
                         td.at(-1).push({ text: index })
                     }
@@ -130,7 +135,7 @@ function convert(req, res) {
                 //Value
                 else {
                     const colSpan = depth - 1
-                    if (depth === maxDepth || index > 0){
+                    if (depth === maxDepth || index > 0) {
                         td.push([{ text: key }])
                     } else if (index === 0) {
                         td.at(-1).push({ text: key })
@@ -143,14 +148,26 @@ function convert(req, res) {
 
     traverseJSON(data, maxDepth)
 
+    console.log()
+
     //console.log(util.inspect(td, false, null, color = true))
 
     //Create the table
     doc.font(FONT).fontSize(12)
     doc.table({
+        data: td,
         defaultStyle: {
+            padding: {
+                top: 6,
+                bottom: 4,
+                left: 4,
+                right: 4
+            },
+            align: {
+                x: 'left',
+                y: 'center'
+            }
         },
-        data: td
     })
     doc.text('\n')
 
