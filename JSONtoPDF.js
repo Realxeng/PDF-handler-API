@@ -77,7 +77,7 @@ function convert(req, res) {
     if (queryValue.description) doc.font(FONT).fontSize(12).text(queryValue.description);
 
     //Function to traverse the data
-    const traverseJSON = (obj, parentKey = '', first) => {
+    const traverseJSON = (obj, colSpan, first) => {
         if (obj && typeof obj === 'object') {
             //Arrays
             if (Array.isArray(obj)) {
@@ -86,7 +86,7 @@ function convert(req, res) {
                     !td.length ? td.push([{ rowSpan, text: index + 1}]) 
                                : index === 0 ? td.at(-1).push({ rowSpan, text: index })
                                              : td.push([{ rowSpan, text: index }]);
-                    traverseJSON(value);
+                    traverseJSON(value, colSpan - 1);
                 });
             }
             //Objects
@@ -96,19 +96,19 @@ function convert(req, res) {
                     first ? td.push([{ rowSpan, text: key }]) 
                           : index === 0 ? td.at(-1).push({ rowSpan, text: key })
                                         : td.push([{ rowSpan, text: key }])
-                    traverseJSON(value)
+                    traverseJSON(value, colSpan - 1)
                 })
             }
         }
         //value
         else {
-           td.at(-1).push(obj);
+           td.at(-1).push({colSpan, obj});
         }
     }
 
     //Build the table data
     let td = []
-    traverseJSON(data, first = true)
+    traverseJSON(data, maxDepth, first = true)
 
     //Create the table
     doc.table({
