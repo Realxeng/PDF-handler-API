@@ -9,6 +9,11 @@ const schema = joi.object({
     title: joi.string(),
     description: joi.string(),
     remarks: joi.string(),
+    compress: joi.bool(),
+    userPassword: joi.string(),
+    ownerPassword: joi.string(),
+    pdfVersion: joi.string(),
+    autoFirstPage: joi.bool(),
     size: joi.string().valid(
         "4A0", "2A0", "A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10",
         "B0", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
@@ -17,12 +22,14 @@ const schema = joi.object({
         "SRA0", "SRA1", "SRA2", "SRA3", "SRA4",
         "LETTER", "LEGAL", "TABLOID", "EXECUTIVE", "FOLIO"
     ).default("A4"),
+    margin: joi.number().integer(),
     margins: joi.object({
-        top: joi.number().min(0).default(60),
-        bottom: joi.number().min(0).default(60),
+        top: joi.number().min(0).default(50),
+        bottom: joi.number().min(0).default(50),
         left: joi.number().default(50),
         right: joi.number().default(50),
     }),
+    layout: joi.string().valid("potrait", "landscape"),
     font: joi.string().valid(
         'Courier', 'Courier-Bold', 'Courier-Oblique', 'Courier-BoldOblique',
         'Helvetica', 'Helvetica-Bold', 'Helvetica-Oblique', 'Helvetica-BoldOblique', 'Symbol',
@@ -53,10 +60,14 @@ function convert(req, res) {
         return res.status(400).json({ message: "Incomplete JSON" })
     }
 
+    const { title, description, remarks, ...pageOptions } = queryValue
+
     //Intialize the PDF
     const doc = new PDF({
-        size: queryValue.size,
-        margins: queryValue.margins
+        ...pageOptions,
+        info: {
+            title: queryValue.title
+        }
     })
     //Create the doc metadata
     //doc.info = {...doc.info, title: queryValue.title}
