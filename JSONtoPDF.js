@@ -82,7 +82,11 @@ function convert(req, res) {
             //Arrays
             if (Array.isArray(obj)) {
                 obj.forEach((value, index) => {
-                    
+                    const rowSpan = Object.keys(flatten(value)).length;
+                    !td.length ? td.push([{ rowSpan, text: index + 1}]) 
+                               : index === 0 ? td.at(-1).push({ rowSpan, text: index })
+                                             : td.push([{ rowSpan, text: index }]);
+                    traverseJSON(value);
                 });
             }
             //Objects
