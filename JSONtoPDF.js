@@ -3,9 +3,11 @@ const joi = require('joi')
 const depth = require('object-depth')
 const { flatten } = require('flat')
 const util = require('util')
+const { table } = require('console')
 
 //Create the query schema
 const schema = joi.object({
+    filename: joi.string(),
     title: joi.string(),
     description: joi.string(),
     remarks: joi.string(),
@@ -59,7 +61,7 @@ function convert(req, res) {
         return res.status(400).json({ message: "No JSON to parse" })
     }
     //Find the max depth
-    const maxDepth = depth(data) + 1
+    const maxDepth = countDepthwithArrayIndices(data) + 1
     if (!maxDepth || maxDepth < 1) {
         console.log("Data: ")
         console.log(data)
@@ -75,12 +77,20 @@ function convert(req, res) {
             Title: queryValue.title
         }
     })
+    const pageHeight = doc.page.height
+    const marginBottom = doc.page.margins.bottom
     //Create the doc metadata
     //doc.info = {...doc.info, title: queryValue.title}
 
+    //Create filename
+    const filename = (queryValue.filename || queryValue.title || 'form')
+        .replace(/[^\w\d_-]+/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '');
+
     //Set the response header
     res.setHeader("Content-Type", "application/pdf")
-    res.setHeader("Content-Disposition", `inline; filename=form.pdf`)
+    res.setHeader("Content-Disposition", `inline; filename=${filename}.pdf`)
     res.status(200)
     //Send the pdf to res object
     doc.pipe(res)
@@ -147,11 +157,42 @@ function convert(req, res) {
         }
     }
 
+    const createTable = () => {
+        for (const row of td) {
+            const rowHeight = Math.max(
+                ...row.map(cell => {
+                    const text = String(cell.text ?? "")
+                    return doc.heightOfString(text)
+                })
+            ) + 10
+
+            if (doc.y + rowHeight > pageHeight - marginBottom) {
+                doc.addPage()
+            }
+
+            doc.table({
+                data: [row],
+                defaultStyle: {
+                    padding: {
+                        top: 6,
+                        bottom: 4,
+                        left: 4,
+                        right: 4
+                    },
+                    align: {
+                        x: 'left',
+                        y: 'center'
+                    }
+                },
+            })
+        }
+    }
+
     traverseJSON(data, maxDepth)
 
     console.log()
 
-    //console.log(util.inspect(td, false, null, color = true))
+    console.log(util.inspect(td, false, null, color = true))
 
     //Create the table
     doc.font(FONT).fontSize(12)
@@ -170,6 +211,7 @@ function convert(req, res) {
             }
         },
     })
+    //doc.addPage()
     doc.text('\n')
 
     //Remarks
@@ -177,6 +219,23 @@ function convert(req, res) {
 
     //Close the doc
     doc.end()
+}
+
+function countDepthwithArrayIndices(object) {
+    const baseDepth = depth(object)
+
+    const numArray = countArrays(object)
+    return baseDepth + numArray
+}
+
+function countArrays(object) {
+    if (Array.isArray(object)) {
+        return 1 + object.reduce((sum, item) => sum + countArrays(item), 0)
+    } else if (object && typeof o === 'object') {
+        return Object.values(object).reduce((sum, item) => sum + countArrays(item), 0)
+    } else {
+        return 0
+    }
 }
 
 module.exports = convert
