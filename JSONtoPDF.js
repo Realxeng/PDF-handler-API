@@ -74,7 +74,7 @@ function convert(req, res) {
     const doc = new PDF({
         ...pageOptions,
         info: {
-            Title: queryValue.title
+            Title: queryValue.title || "Form"
         }
     })
     const pageHeight = doc.page.height
@@ -110,7 +110,7 @@ function convert(req, res) {
     let td = []
 
     //Function to traverse the data
-    const traverseJSON = (obj, depth) => {
+    const buildTableData = (obj, depth, rowspan) => {
         //Arrays
         if (Array.isArray(obj)) {
             obj.forEach((value, index) => {
@@ -188,14 +188,18 @@ function convert(req, res) {
         }
     }
 
-    traverseJSON(data, maxDepth)
-
-    console.log()
+    const tdArray = buildTableData(data, maxDepth)
 
     console.log(util.inspect(td, false, null, color = true))
 
     //Create the table
     doc.font(FONT).fontSize(12)
+    const rowHeight = doc.heightOfString("") + 10
+    for (const row of data) {
+        if (doc.y + rowHeight <= pageHeight) {
+            
+        }
+    }
     doc.table({
         data: td,
         defaultStyle: {
