@@ -178,7 +178,7 @@ function convert(req, res) {
         if (currentY + rowHeight > pageHeight) {
             const currPage = tablePages[tablePages.length - 1]
             const newRow = []
-            newRow.push({ text: "", colSpan: 8,  border: [true, false, false, false] })
+            newRow.push({ text: "", colSpan: maxDepth,  border: [true, false, false, false] })
             currPage.push(newRow)
             tablePages.push([])
             currentY = doc.page.margins.top
@@ -197,7 +197,7 @@ function convert(req, res) {
         newRow.push(...td)
         currPage.push(newRow)
         currentY += rowHeight
-        if (index === tdPages - 1) currPage.push([{ text: "", colSpan: 8,  border: [true, false, false, false] }])
+        if (index === tdPages - 1) currPage.push([{ text: "", colSpan: maxDepth,  border: [true, false, false, false] }])
     }
     console.log("Printing table")
     const numPage = tablePages.length
