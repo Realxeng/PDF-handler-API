@@ -3,14 +3,13 @@ const joi = require('joi')
 const depth = require('object-depth')
 const { flatten } = require('flat')
 const util = require('util')
-const { table } = require('console')
 
 //Create the query schema
 const schema = joi.object({
     filename: joi.string(),
-    title: joi.string(),
-    description: joi.string(),
-    remarks: joi.string(),
+    title: joi.string().allow(""),
+    description: joi.string().allow(""),
+    remarks: joi.string().allow(""),
     compress: joi.bool(),
     userPassword: joi.string(),
     ownerPassword: joi.string(),
@@ -45,7 +44,7 @@ const schema = joi.object({
     ).default('Times-Roman'),
 }).unknown(false)
 
-function convert(req, res) {
+async function convert(req, res) {
     const body = req.body
     //Validate the request query
     const { error, value: queryValue } = schema.validate(body.options || {}, { abortEarly: false })
@@ -236,6 +235,12 @@ function convert(req, res) {
 
     //Remarks
     if (queryValue.remarks) doc.font(FONT).fontSize(12).text(queryValue.remarks)
+
+    const imageResponse = await fetch("https://cdn.prod.website-files.com/67eec980688c542bc1b9a3bf/67eeca8fa74f278cb105a481_400.jpg")
+    const imageBuffer = await imageResponse.arrayBuffer()
+    doc.image(Buffer.from(imageBuffer), {
+        fit: [250,250],
+    })
 
     //Close the doc
     doc.end()
