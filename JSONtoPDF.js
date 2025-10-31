@@ -74,7 +74,7 @@ function convert(req, res) {
     const doc = new PDF({
         ...pageOptions,
         info: {
-            Title: queryValue.title
+            Title: queryValue.title || "Form"
         }
     })
     const pageHeight = doc.page.height
