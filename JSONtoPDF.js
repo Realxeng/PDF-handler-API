@@ -157,16 +157,17 @@ function convert(req, res) {
         }
     }
 
+    //Create the table
     console.log("Processing data")
     buildTableData(data, maxDepth)
 
-    //Create the table
+    //Create table pagination
     const cellWidth = (pageWidth - marginLeft - marginRight) / maxDepth;
     doc.font(FONT).fontSize(12)
-    console.log("Paginating table")
     const tablePages = [[]]
     let currentY = doc.y
     const tdPages = tdArray.length
+    console.log("Paginating table")
     for (const [index, td] of tdArray.entries()) {
         const rowHeight = Math.max(...td.map(cell => {
             return doc.heightOfString(cell.text, { width: cellWidth * (cell.colSpan || 1) }) + 10
@@ -199,6 +200,8 @@ function convert(req, res) {
         currentY += rowHeight
         if (index === tdPages - 1) currPage.push([{ text: "", colSpan: maxDepth,  border: [true, false, false, false] }])
     }
+
+    //Print the table
     console.log("Printing table")
     const numPage = tablePages.length
     for (const [index, pages] of tablePages.entries()) {
