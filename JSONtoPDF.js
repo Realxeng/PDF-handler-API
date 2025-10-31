@@ -7,58 +7,56 @@ const { table } = require('console')
 
 //Create the query schema
 const schema = joi.object({
-    options: joi.object({
-        filename: joi.string(),
-        title: joi.string(),
-        description: joi.string(),
-        remarks: joi.string(),
-        compress: joi.bool(),
-        userPassword: joi.string(),
-        ownerPassword: joi.string(),
-        pdfVersion: joi.string(),
-        autoFirstPage: joi.bool(),
-        size: joi.alternatives().try(
-            joi.string().valid(
-                "4A0", "2A0", "A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10",
-                "B0", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
-                "C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10",
-                "RA0", "RA1", "RA2", "RA3", "RA4",
-                "SRA0", "SRA1", "SRA2", "SRA3", "SRA4",
-                "LETTER", "LEGAL", "TABLOID", "EXECUTIVE", "FOLIO"
-            ),
-            joi.array().items(joi.number()).min(2).max(2)
-        ).default("A4"),
-        margin: joi.alternatives().try(
-            joi.number(),
-            joi.string()
-        ).default(50),
-        margins: joi.object({
-            top: joi.number().min(0),
-            bottom: joi.number().min(0),
-            left: joi.number(),
-            right: joi.number(),
-        }),
-        layout: joi.string().valid("potrait", "landscape"),
-        font: joi.string().valid(
-            'Courier', 'Courier-Bold', 'Courier-Oblique', 'Courier-BoldOblique',
-            'Helvetica', 'Helvetica-Bold', 'Helvetica-Oblique', 'Helvetica-BoldOblique', 'Symbol',
-            'Times-Roman', 'Times-Bold', 'Times-Italic', 'Times-BoldItalic', 'ZapfDingbats'
-        ).default('Times-Roman'),
+    filename: joi.string(),
+    title: joi.string(),
+    description: joi.string(),
+    remarks: joi.string(),
+    compress: joi.bool(),
+    userPassword: joi.string(),
+    ownerPassword: joi.string(),
+    pdfVersion: joi.string(),
+    autoFirstPage: joi.bool(),
+    size: joi.alternatives().try(
+        joi.string().valid(
+            "4A0", "2A0", "A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10",
+            "B0", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
+            "C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10",
+            "RA0", "RA1", "RA2", "RA3", "RA4",
+            "SRA0", "SRA1", "SRA2", "SRA3", "SRA4",
+            "LETTER", "LEGAL", "TABLOID", "EXECUTIVE", "FOLIO"
+        ),
+        joi.array().items(joi.number()).min(2).max(2)
+    ).default("A4"),
+    margin: joi.alternatives().try(
+        joi.number(),
+        joi.string()
+    ).default(50),
+    margins: joi.object({
+        top: joi.number().min(0),
+        bottom: joi.number().min(0),
+        left: joi.number(),
+        right: joi.number(),
     }),
-    data: joi.object()
+    layout: joi.string().valid("potrait", "landscape"),
+    font: joi.string().valid(
+        'Courier', 'Courier-Bold', 'Courier-Oblique', 'Courier-BoldOblique',
+        'Helvetica', 'Helvetica-Bold', 'Helvetica-Oblique', 'Helvetica-BoldOblique', 'Symbol',
+        'Times-Roman', 'Times-Bold', 'Times-Italic', 'Times-BoldItalic', 'ZapfDingbats'
+    ).default('Times-Roman'),
 }).unknown(false)
 
 function convert(req, res) {
+    const body = req.body
     //Validate the request query
-    const { error, value } = schema.validate(req.body, { abortEarly: false })
+    const { error, value: queryValue } = schema.validate(body.options || {}, { abortEarly: false })
     //Check query validation
     if (error) return res.status(400).json(error)
     //Get the data and query
-    const { options: queryValue, data}  = value
+    const data = body.data
     //Set the default font
     const FONT = queryValue.font
     //Check the data
-    if (!data) {
+    if (!data || typeof data !== "object") {
         console.log('Request body: ')
         console.log(req.body)
         return res.status(400).json({ message: "No JSON to parse" })
