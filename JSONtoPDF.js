@@ -77,10 +77,10 @@ function convert(req, res) {
             Title: queryValue.title || "Form"
         }
     })
-    const pageHeight = doc.page.height
-    const marginBottom = doc.page.margins.bottom
-    //Create the doc metadata
-    //doc.info = {...doc.info, title: queryValue.title}
+    const pageHeight = doc.page.height - doc.page.margins.top - doc.page.margins.bottom
+    const pageWidth = doc.page.width
+    const marginLeft = doc.page.margins.left
+    const marginRight = doc.page.margins.right
 
     //Create filename
     const filename = (queryValue.filename || queryValue.title || 'form')
@@ -107,29 +107,29 @@ function convert(req, res) {
     if (queryValue.description) doc.font(FONT).fontSize(12).text(queryValue.description);
 
     //Build the table data
-    let td = []
+    let tdArray = []
 
     //Function to traverse the data
-    const buildTableData = (obj, depth, rowspan) => {
+    const buildTableData = (obj, depth) => {
         //Arrays
         if (Array.isArray(obj)) {
             obj.forEach((value, index) => {
                 if (typeof value === 'object') {
-                    const rowSpan = Object.keys(flatten(value)).length
-                    !td.length ? td.push([{ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1 }])
-                        : index === 0 ? td.at(-1).push({ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1 })
-                            : td.push([{ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1 }]);
-                    traverseJSON(value, depth - 1);
+                    const rowSpan = 1 || Object.keys(flatten(value)).length
+                    !tdArray.length ? tdArray.push([{ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1, border: [true, true, false, true] }])
+                        : index === 0 ? tdArray.at(-1).push({ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1, border: [true, true, false, true] })
+                            : tdArray.push([{ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1, border: [true, true, false, true] }]);
+                    buildTableData(value, depth - 1);
                 }
                 //Value
                 else {
                     const colSpan = depth - 1
                     if (depth === maxDepth || index > 0) {
-                        td.push([{ text: index }])
+                        tdArray.push([{ text: index }])
                     } else if (index === 0) {
-                        td.at(-1).push({ text: index })
+                        tdArray.at(-1).push({ text: index })
                     }
-                    td.at(-1).push({ colSpan, text: value });
+                    tdArray.at(-1).push({ colSpan, text: value });
                 }
             });
         }
@@ -137,84 +137,99 @@ function convert(req, res) {
         else {
             Object.entries(obj).forEach(([key, value], index) => {
                 if (typeof value === 'object') {
-                    const rowSpan = Object.keys(flatten(value)).length
-                    !td.length ? td.push([{ rowSpan, text: key }])
-                        : index === 0 ? td.at(-1).push({ rowSpan, text: key })
-                            : td.push([{ rowSpan, text: key }])
-                    traverseJSON(value, depth - 1)
+                    const rowSpan = 1 || Object.keys(flatten(value)).length
+                    !tdArray.length ? tdArray.push([{ rowSpan, text: key, border: [true, true, false, true] }])
+                        : index === 0 ? tdArray.at(-1).push({ rowSpan, text: key, border: [true, true, false, true] })
+                            : tdArray.push([{ rowSpan, text: key, border: [true, true, false, true] }])
+                    buildTableData(value, depth - 1)
                 }
                 //Value
                 else {
                     const colSpan = depth - 1
                     if (depth === maxDepth || index > 0) {
-                        td.push([{ text: key }])
+                        tdArray.push([{ text: key }])
                     } else if (index === 0) {
-                        td.at(-1).push({ text: key })
+                        tdArray.at(-1).push({ text: key })
                     }
-                    td.at(-1).push({ colSpan, text: value });
+                    tdArray.at(-1).push({ colSpan, text: value });
                 }
             })
         }
     }
 
-    const createTable = () => {
-        for (const row of td) {
-            const rowHeight = Math.max(
-                ...row.map(cell => {
-                    const text = String(cell.text ?? "")
-                    return doc.heightOfString(text)
-                })
-            ) + 10
-
-            if (doc.y + rowHeight > pageHeight - marginBottom) {
-                doc.addPage()
-            }
-
-            doc.table({
-                data: [row],
-                defaultStyle: {
-                    padding: {
-                        top: 6,
-                        bottom: 4,
-                        left: 4,
-                        right: 4
-                    },
-                    align: {
-                        x: 'left',
-                        y: 'center'
-                    }
-                },
-            })
-        }
-    }
-
-    const tdArray = buildTableData(data, maxDepth)
-
-    console.log(util.inspect(td, false, null, color = true))
-
     //Create the table
+    console.log("Processing data")
+    buildTableData(data, maxDepth)
+
+    //Create table pagination
+    const cellWidth = (pageWidth - marginLeft - marginRight) / maxDepth;
     doc.font(FONT).fontSize(12)
-    const rowHeight = doc.heightOfString("") + 10
-    for (const row of data) {
-        if (doc.y + rowHeight <= pageHeight) {
-            
+    const tablePages = [[]]
+    let currentY = doc.y
+    const tdPages = tdArray.length
+    console.log("Paginating table")
+    for (const [index, td] of tdArray.entries()) {
+        const rowHeight = Math.max(...td.map(cell => {
+            return doc.heightOfString(cell.text, { width: cellWidth * (cell.colSpan || 1) }) + 10
+        }))
+        const totalColSpan = td.reduce((sum, cell) => {
+            return sum + (cell.colSpan || 1)
+        }, 0)
+        //console.log(`total row colspan: ${totalColSpan}`)
+        if (currentY + rowHeight > pageHeight) {
+            const currPage = tablePages[tablePages.length - 1]
+            const newRow = []
+            newRow.push({ text: "", colSpan: maxDepth,  border: [true, false, false, false] })
+            currPage.push(newRow)
+            tablePages.push([])
+            currentY = doc.page.margins.top
         }
-    }
-    doc.table({
-        data: td,
-        defaultStyle: {
-            padding: {
-                top: 6,
-                bottom: 4,
-                left: 4,
-                right: 4
-            },
-            align: {
-                x: 'left',
-                y: 'center'
+        const currPage = tablePages[tablePages.length - 1]
+        const newRow = []
+        if (currentY === doc.page.margins.top) {
+            for (let i = totalColSpan; i < maxDepth; i++) {
+                newRow.push({ text: "", border: [true, true, false, true] })
             }
-        },
-    })
+        } else {
+            for (let i = totalColSpan; i < maxDepth; i++) {
+                newRow.push({ text: "", border: [false, true, false, true] })
+            }
+        }
+        newRow.push(...td)
+        currPage.push(newRow)
+        currentY += rowHeight
+        if (index === tdPages - 1) currPage.push([{ text: "", colSpan: maxDepth,  border: [true, false, false, false] }])
+    }
+
+    //Print the table
+    console.log("Printing table")
+    const numPage = tablePages.length
+    for (const [index, pages] of tablePages.entries()) {
+        //console.log(util.inspect(pages, { depth: null, colors: true }))
+        /*
+        console.log("Row widths check:");
+        for (const [i, row] of pages.entries()) {
+            const totalColSpan = row.reduce((s, c) => s + (c.colSpan || 1), 0);
+            console.log(`Row ${i} colspan total: ${totalColSpan}`);
+        }
+        */
+        doc.table({
+            data: pages,
+            defaultStyle: {
+                padding: {
+                    top: 6,
+                    bottom: 4,
+                    left: 4,
+                    right: 4
+                },
+                align: {
+                    x: 'left',
+                    y: 'center'
+                }
+            },
+        })
+        if (index < numPage - 1) doc.addPage()
+    }
     //doc.addPage()
     doc.text('\n')
 
