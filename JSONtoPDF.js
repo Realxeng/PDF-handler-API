@@ -79,8 +79,9 @@ function convert(req, res) {
     })
     const pageHeight = doc.page.height
     const marginBottom = doc.page.margins.bottom
-    //Create the doc metadata
-    //doc.info = {...doc.info, title: queryValue.title}
+    const pageWidth = doc.page.width
+    const marginLeft = doc.page.margins.left
+    const marginRight = doc.page.margins.right
 
     //Create filename
     const filename = (queryValue.filename || queryValue.title || 'form')
@@ -107,29 +108,29 @@ function convert(req, res) {
     if (queryValue.description) doc.font(FONT).fontSize(12).text(queryValue.description);
 
     //Build the table data
-    let td = []
+    let tdArray = []
 
     //Function to traverse the data
-    const buildTableData = (obj, depth, rowspan) => {
+    const buildTableData = (obj, depth) => {
         //Arrays
         if (Array.isArray(obj)) {
             obj.forEach((value, index) => {
                 if (typeof value === 'object') {
                     const rowSpan = Object.keys(flatten(value)).length
-                    !td.length ? td.push([{ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1 }])
-                        : index === 0 ? td.at(-1).push({ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1 })
-                            : td.push([{ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1 }]);
-                    traverseJSON(value, depth - 1);
+                    !tdArray.length ? tdArray.push([{ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1 }])
+                        : index === 0 ? tdArray.at(-1).push({ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1 })
+                            : tdArray.push([{ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1 }]);
+                    buildTableData(value, depth - 1);
                 }
                 //Value
                 else {
                     const colSpan = depth - 1
                     if (depth === maxDepth || index > 0) {
-                        td.push([{ text: index }])
+                        tdArray.push([{ text: index }])
                     } else if (index === 0) {
-                        td.at(-1).push({ text: index })
+                        tdArray.at(-1).push({ text: index })
                     }
-                    td.at(-1).push({ colSpan, text: value });
+                    tdArray.at(-1).push({ colSpan, text: value });
                 }
             });
         }
@@ -138,83 +139,76 @@ function convert(req, res) {
             Object.entries(obj).forEach(([key, value], index) => {
                 if (typeof value === 'object') {
                     const rowSpan = Object.keys(flatten(value)).length
-                    !td.length ? td.push([{ rowSpan, text: key }])
-                        : index === 0 ? td.at(-1).push({ rowSpan, text: key })
-                            : td.push([{ rowSpan, text: key }])
-                    traverseJSON(value, depth - 1)
+                    !tdArray.length ? tdArray.push([{ rowSpan, text: key }])
+                        : index === 0 ? tdArray.at(-1).push({ rowSpan, text: key })
+                            : tdArray.push([{ rowSpan, text: key }])
+                    buildTableData(value, depth - 1)
                 }
                 //Value
                 else {
                     const colSpan = depth - 1
                     if (depth === maxDepth || index > 0) {
-                        td.push([{ text: key }])
+                        tdArray.push([{ text: key }])
                     } else if (index === 0) {
-                        td.at(-1).push({ text: key })
+                        tdArray.at(-1).push({ text: key })
                     }
-                    td.at(-1).push({ colSpan, text: value });
+                    tdArray.at(-1).push({ colSpan, text: value });
                 }
             })
         }
     }
 
-    const createTable = () => {
-        for (const row of td) {
-            const rowHeight = Math.max(
-                ...row.map(cell => {
-                    const text = String(cell.text ?? "")
-                    return doc.heightOfString(text)
-                })
-            ) + 10
-
-            if (doc.y + rowHeight > pageHeight - marginBottom) {
-                doc.addPage()
-            }
-
-            doc.table({
-                data: [row],
-                defaultStyle: {
-                    padding: {
-                        top: 6,
-                        bottom: 4,
-                        left: 4,
-                        right: 4
-                    },
-                    align: {
-                        x: 'left',
-                        y: 'center'
-                    }
-                },
-            })
-        }
-    }
-
-    const tdArray = buildTableData(data, maxDepth)
-
-    console.log(util.inspect(td, false, null, color = true))
+    console.log("Processing data")
+    buildTableData(data, maxDepth)
 
     //Create the table
+    const cellWidth = (pageWidth - marginLeft - marginRight) / maxDepth;
     doc.font(FONT).fontSize(12)
-    const rowHeight = doc.heightOfString("") + 10
-    for (const row of data) {
-        if (doc.y + rowHeight <= pageHeight) {
-            
+    console.log("Paginating table")
+    const tablePages = [[]]
+    let currentY = doc.y
+    for (const td of tdArray) {
+        const rowHeight = Math.max(...td.map(cell => {
+            return doc.heightOfString(cell.text, { width: cellWidth * (cell.colSpan || 1) }) + 10
+        }))
+        const totalColSpan = td.reduce((sum, cell) => {
+            //console.log(`cell: ${cell.text}\ncolspan: ${cell.colSpan || 1}`)
+            return sum + (cell.colSpan || 1)
+        }, 0)
+        //console.log(`total row colspan: ${totalColSpan}`)
+        if (currentY + rowHeight > pageHeight) {
+            tablePages.push([])
+            currentY = doc.page.margins.top
         }
+        const currPage = tablePages[tablePages.length - 1]
+        const newRow = []
+        for (let i = totalColSpan; i < maxDepth; i++) {
+            newRow.push({text: ""})
+        }
+        newRow.push(...td)
+        currPage.push(newRow)
+        currentY += rowHeight
     }
-    doc.table({
-        data: td,
-        defaultStyle: {
-            padding: {
-                top: 6,
-                bottom: 4,
-                left: 4,
-                right: 4
+    console.log("Printing table")
+    console.log(util.inspect(tablePages, { depth: null, colors: true}))
+    for (const pages of tablePages) {
+        doc.table({
+            data: pages,
+            defaultStyle: {
+                padding: {
+                    top: 6,
+                    bottom: 4,
+                    left: 4,
+                    right: 4
+                },
+                align: {
+                    x: 'left',
+                    y: 'center'
+                }
             },
-            align: {
-                x: 'left',
-                y: 'center'
-            }
-        },
-    })
+        })
+        doc.addPage()
+    }
     //doc.addPage()
     doc.text('\n')
 
