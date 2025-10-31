@@ -4,10 +4,11 @@ A javascript API that takes in json input and create a pdf table output.
 The API supports JSON with nested arrays and objects. 
 By default, the server route the function through `/jsontopdf` route and expects POST HTTP method from the request. Otherwise, the API will return 404 Not Found.  
 
-The API expects the JSON data to be passed in the request body and the [options](https://github.com/Realxeng/JSONtoPDF?tab=readme-ov-file#query-options) passed in the request query.
+The API expects the JSON data and the [options](https://github.com/Realxeng/JSONtoPDF?tab=readme-ov-file#query-options) to be passed in the request body.
+`body: { data: object, options?: object }`
 
 The API uses [pdfkit](https://www.npmjs.com/package/pdfkit) package. For more information visit [PDFKit Documentation](https://pdfkit.org/docs/getting_started.html)
-## Query Options
+## Options
 - `title (string)`  
 Title of the PDF shown in the middle top of the first page
 - `description (string)`  
