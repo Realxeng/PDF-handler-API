@@ -62,7 +62,7 @@ function convert(req, res) {
         return res.status(400).json({ message: "No JSON to parse" })
     }
     //Find the max depth
-    const maxDepth = countDepthwithArrayIndices(data) + 1
+    const maxDepth = depth(data) + 1
     if (!maxDepth || maxDepth < 1) {
         console.log("Data: ")
         console.log(data)
@@ -124,13 +124,12 @@ function convert(req, res) {
                 }
                 //Value
                 else {
-                    const colSpan = depth - 1
+                    const colSpan = depth
                     if (depth === maxDepth || index > 0) {
-                        tdArray.push([{ text: index + 1 }])
+                        tdArray.push([{ colSpan, text: value }])
                     } else if (index === 0) {
-                        tdArray.at(-1).push({ text: index + 1 })
+                        tdArray.at(-1).push({ colSpan, text: value })
                     }
-                    tdArray.at(-1).push({ colSpan, text: value });
                 }
             });
         }
@@ -239,23 +238,6 @@ function convert(req, res) {
 
     //Close the doc
     doc.end()
-}
-
-function countDepthwithArrayIndices(object) {
-    const baseDepth = depth(object)
-
-    const numArray = countArrays(object)
-    return baseDepth + numArray
-}
-
-function countArrays(object) {
-    if (Array.isArray(object)) {
-        return 1 + object.reduce((sum, item) => sum + countArrays(item), 0)
-    } else if (object && typeof o === 'object') {
-        return Object.values(object).reduce((sum, item) => sum + countArrays(item), 0)
-    } else {
-        return 0
-    }
 }
 
 module.exports = convert
