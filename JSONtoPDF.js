@@ -126,9 +126,9 @@ function convert(req, res) {
                 else {
                     const colSpan = depth - 1
                     if (depth === maxDepth || index > 0) {
-                        tdArray.push([{ text: index }])
+                        tdArray.push([{ text: index + 1 }])
                     } else if (index === 0) {
-                        tdArray.at(-1).push({ text: index })
+                        tdArray.at(-1).push({ text: index + 1 })
                     }
                     tdArray.at(-1).push({ colSpan, text: value });
                 }
