@@ -145,10 +145,8 @@ async function convert(req, res) {
         //Arrays
         if (Array.isArray(obj)) {
             obj.forEach((value, index) => {
-                const arrLen = obj.length
                 if (typeof value === 'object') {
                     buildTableData(value, depth - 1);
-                    if (index < arrLen - 1) tdArray.push([])
                 }
                 //Value
                 else {
@@ -165,7 +163,7 @@ async function convert(req, res) {
         else {
             Object.entries(obj).forEach(([key, value], index) => {
                 if (typeof value === 'object') {
-                    const rowSpan = 1
+                    const rowSpan = 1 || Object.keys(flatten(value)).length
                     !tdArray.length ? tdArray.push([{ rowSpan, text: key, border: [true, true, false, true] }])
                         : index === 0 ? tdArray.at(-1).push({ rowSpan, text: key, border: [true, true, false, true] })
                             : tdArray.push([{ rowSpan, text: key, border: [true, true, false, true] }])
