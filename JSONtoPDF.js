@@ -115,8 +115,10 @@ function convert(req, res) {
         //Arrays
         if (Array.isArray(obj)) {
             obj.forEach((value, index) => {
+                const arrLen = obj.length
                 if (typeof value === 'object') {
                     buildTableData(value, depth - 1);
+                    if (index < arrLen - 1) tdArray.push([])
                 }
                 //Value
                 else {
@@ -133,7 +135,7 @@ function convert(req, res) {
         else {
             Object.entries(obj).forEach(([key, value], index) => {
                 if (typeof value === 'object') {
-                    const rowSpan = 1 || Object.keys(flatten(value)).length
+                    const rowSpan = 1
                     !tdArray.length ? tdArray.push([{ rowSpan, text: key, border: [true, true, false, true] }])
                         : index === 0 ? tdArray.at(-1).push({ rowSpan, text: key, border: [true, true, false, true] })
                             : tdArray.push([{ rowSpan, text: key, border: [true, true, false, true] }])
@@ -201,14 +203,12 @@ function convert(req, res) {
     console.log("Printing table")
     const numPage = tablePages.length
     for (const [index, pages] of tablePages.entries()) {
-        //console.log(util.inspect(pages, { depth: null, colors: true }))
-        /*
+        console.log(util.inspect(pages, { depth: null, colors: true }))
         console.log("Row widths check:");
         for (const [i, row] of pages.entries()) {
             const totalColSpan = row.reduce((s, c) => s + (c.colSpan || 1), 0);
             console.log(`Row ${i} colspan total: ${totalColSpan}`);
         }
-        */
         doc.table({
             data: pages,
             defaultStyle: {
