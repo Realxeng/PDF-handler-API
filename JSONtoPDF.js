@@ -114,11 +114,11 @@ function convert(req, res) {
     const buildTableData = (obj, depth) => {
         //Arrays
         if (Array.isArray(obj)) {
+            const arrLen = obj.length - 1
             obj.forEach((value, index) => {
-                const arrLen = obj.length
                 if (typeof value === 'object') {
                     buildTableData(value, depth - 1);
-                    if (index < arrLen - 1) tdArray.push([])
+                    if (index < arrLen) tdArray.push([])
                 }
                 //Value
                 else {
