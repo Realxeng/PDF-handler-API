@@ -3,7 +3,7 @@ const joi = require('joi')
 const depth = require('object-depth')
 const { flatten } = require('flat')
 const util = require('util')
-const { table } = require('console')
+const { imageSize } = require('image-size')
 
 //Create the query schema
 const schema = joi.object({
@@ -30,7 +30,7 @@ const schema = joi.object({
     margin: joi.alternatives().try(
         joi.number(),
         joi.string()
-    ).default(50),
+    ).default(60),
     margins: joi.object({
         top: joi.number().min(0),
         bottom: joi.number().min(0),
@@ -69,11 +69,13 @@ async function convert(req, res) {
     //Build header
     const drawHeader = (doc) => {
         const pageWidth = doc.page.width
-        const margin = doc.page.margins.left
-        const logoWidth = 80
+        const margin = doc.page.margins.right
+        const { width, height, type } = imageSize(logo)
+        const scale = Math.min(100 / width, 40 / height)
+        const logoWidth = width * scale
         const logoX = pageWidth - margin - logoWidth
-        const logoY = 0
-        doc.image(logo, logoX, logoY, { width: logoWidth })
+        const logoY = 10
+        doc.image(logo, logoX, logoY, { fit: [100, 40] })
     }
 
     //Set the default font
@@ -85,7 +87,8 @@ async function convert(req, res) {
         return res.status(400).json({ message: "No JSON to parse" })
     }
     //Find the max depth
-    const maxDepth = depth(data)
+    const maxDepth = objectDepthIgnoringArrays(data) + 1
+    console.log(maxDepth)
     if (!maxDepth || maxDepth < 1) {
         console.log("Data: ")
         console.log(data)
@@ -148,12 +151,12 @@ async function convert(req, res) {
                 if (typeof value === 'object') {
                     const rowSpan = 1
                     if (!tdArray.length) {
-                        tdArray.push([{ rowSpan, align: { x: 'center', y: 'center' }, text: `${parent} ${index + 1}`, border: [true, true, false, true] }])
+                        tdArray.push([{ rowSpan, align: { y: 'center' }, text: `${parent} ${index + 1}`, border: [true, true, false, true] }])
                     } else if (index === 0) {
                         //tdArray.at(-1).pop()
-                        tdArray.at(-1)[tdArray.at(-1).length - 1] = { rowSpan, align: { x: 'center', y: 'center' }, text: `${parent} ${index + 1}`, border: [true, true, false, true] }
+                        tdArray.at(-1)[tdArray.at(-1).length - 1] = { rowSpan, align: { y: 'center' }, text: `${parent} ${index + 1}`, border: [true, true, false, true] }
                     } else {
-                        tdArray.push([{ rowSpan, align: { x: 'center', y: 'center' }, text: `${parent} ${index + 1}`, border: [true, true, false, true] }]);
+                        tdArray.push([{ rowSpan, align: { y: 'center' }, text: `${parent} ${index + 1}`, border: [true, true, false, true] }]);
                     }
                     buildTableData(value, depth);
                 }
@@ -240,12 +243,14 @@ async function convert(req, res) {
     console.log("Printing table")
     const numPage = tablePages.length
     for (const [index, pages] of tablePages.entries()) {
-        console.log(util.inspect(pages, { depth: null, colors: true }))
+        //console.log(util.inspect(pages, { depth: null, colors: true }))
+        /*
         console.log("Row widths check:");
         for (const [i, row] of pages.entries()) {
             const totalColSpan = row.reduce((s, c) => s + (c.colSpan || 1), 0);
             console.log(`Row ${i} colspan total: ${totalColSpan}`);
         }
+        */
         doc.table({
             data: pages,
             defaultStyle: {
@@ -273,6 +278,19 @@ async function convert(req, res) {
     doc.end()
 }
 
+function objectDepthIgnoringArrays(obj) {
+  if (obj && typeof obj === "object") {
+    if (Array.isArray(obj)) {
+      // Skip array itself, but explore its contents
+      return Math.max(0, ...obj.map(item => objectDepthIgnoringArrays(item)));
+    } else {
+      // Regular object — add 1 to depth
+      return 1 + Math.max(0, ...Object.values(obj).map(value => objectDepthIgnoringArrays(value)));
+    }
+  }
+  return 0; // Non-object (base case)
+}
+
 function countDepthwithArrayIndices(object) {
     const baseDepth = depth(object)
 
@@ -283,7 +301,7 @@ function countDepthwithArrayIndices(object) {
 function countArrays(object) {
     if (Array.isArray(object)) {
         return 1 + object.reduce((sum, item) => sum + countArrays(item), 0)
-    } else if (object && typeof o === 'object') {
+    } else if (object && typeof object === 'object') {
         return Object.values(object).reduce((sum, item) => sum + countArrays(item), 0)
     } else {
         return 0
