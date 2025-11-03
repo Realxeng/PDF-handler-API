@@ -145,7 +145,6 @@ async function convert(req, res) {
         //Arrays
         if (Array.isArray(obj)) {
             obj.forEach((value, index) => {
-                const arrLen = obj.length
                 if (typeof value === 'object') {
                     const rowSpan = 1 || Object.keys(flatten(value)).length
                     !tdArray.length ? tdArray.push([{ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1, border: [true, true, false, true] }])
