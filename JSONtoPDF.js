@@ -265,7 +265,6 @@ async function convert(req, res) {
                 }
             })
         }
-      });
     }
   };
 
@@ -392,7 +391,6 @@ async function convert(req, res) {
         doc.fillColor("black"); // reset color
       }
     }
-  }
 
   //Remarks
   if (queryValue.remarks) doc.font(FONT).fontSize(12).text(queryValue.remarks);
