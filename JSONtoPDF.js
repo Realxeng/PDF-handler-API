@@ -43,9 +43,10 @@ const schema = joi.object({
         'Helvetica', 'Helvetica-Bold', 'Helvetica-Oblique', 'Helvetica-BoldOblique', 'Symbol',
         'Times-Roman', 'Times-Bold', 'Times-Italic', 'Times-BoldItalic', 'ZapfDingbats'
     ).default('Times-Roman'),
+    logo: joi.string().uri()
 }).unknown(false)
 
-function convert(req, res) {
+async function convert(req, res) {
     const body = req.body
     //Validate the request query
     const { error, value: queryValue } = schema.validate(body.options || {}, { abortEarly: false })
@@ -53,6 +54,28 @@ function convert(req, res) {
     if (error) return res.status(400).json(error)
     //Get the data and query
     const data = body.data
+    let logo = queryValue.logo || false
+    if (logo) {
+        try{
+            const response = await fetch(logo)
+            const logoBuffer = await response.arrayBuffer()
+            logo = Buffer.from(logoBuffer)
+        } catch (error) {
+            console.log(error)
+            logo = false
+        }
+    }
+
+    //Build header
+    const drawHeader = (doc) => {
+        const pageWidth = doc.page.width
+        const margin = doc.page.margins.left
+        const logoWidth = 80
+        const logoX = pageWidth - margin - logoWidth
+        const logoY = 0
+        doc.image(logo, logoX, logoY, { width: logoWidth })
+    }
+
     //Set the default font
     const FONT = queryValue.font
     //Check the data
@@ -99,6 +122,9 @@ function convert(req, res) {
     /**
      * Build the PDF
      */
+    //Logo header
+    if (logo) drawHeader(doc)
+
     //Title
     if (queryValue.title) {
         doc.font(FONT).fontSize(24).text(queryValue.title, { align: 'center' })
@@ -106,6 +132,10 @@ function convert(req, res) {
     }
     //Description
     if (queryValue.description) doc.font(FONT).fontSize(12).text(queryValue.description);
+
+    doc.on("pageAdded", () => {
+        if (logo) drawHeader(doc)
+    })
 
     //Build the table data
     let tdArray = []
@@ -203,12 +233,14 @@ function convert(req, res) {
     console.log("Printing table")
     const numPage = tablePages.length
     for (const [index, pages] of tablePages.entries()) {
-        console.log(util.inspect(pages, { depth: null, colors: true }))
+        //console.log(util.inspect(pages, { depth: null, colors: true }))
+        /*
         console.log("Row widths check:");
         for (const [i, row] of pages.entries()) {
             const totalColSpan = row.reduce((s, c) => s + (c.colSpan || 1), 0);
             console.log(`Row ${i} colspan total: ${totalColSpan}`);
         }
+        */
         doc.table({
             data: pages,
             defaultStyle: {
