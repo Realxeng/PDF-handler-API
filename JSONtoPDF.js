@@ -85,7 +85,7 @@ async function convert(req, res) {
         return res.status(400).json({ message: "No JSON to parse" })
     }
     //Find the max depth
-    const maxDepth = depth(data) + 1
+    const maxDepth = depth(data)
     if (!maxDepth || maxDepth < 1) {
         console.log("Data: ")
         console.log(data)
@@ -141,16 +141,21 @@ async function convert(req, res) {
     let tdArray = []
 
     //Function to traverse the data
-    const buildTableData = (obj, depth) => {
+    const buildTableData = (obj, depth, parent = "") => {
         //Arrays
         if (Array.isArray(obj)) {
             obj.forEach((value, index) => {
                 if (typeof value === 'object') {
-                    const rowSpan = 1 || Object.keys(flatten(value)).length
-                    !tdArray.length ? tdArray.push([{ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1, border: [true, true, false, true] }])
-                        : index === 0 ? tdArray.at(-1).push({ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1, border: [true, true, false, true] })
-                            : tdArray.push([{ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1, border: [true, true, false, true] }]);
-                    buildTableData(value, depth - 1);
+                    const rowSpan = 1
+                    if (!tdArray.length) {
+                        tdArray.push([{ rowSpan, align: { x: 'center', y: 'center' }, text: `${parent} ${index + 1}`, border: [true, true, false, true] }])
+                    } else if (index === 0) {
+                        //tdArray.at(-1).pop()
+                        tdArray.at(-1)[tdArray.at(-1).length - 1] = { rowSpan, align: { x: 'center', y: 'center' }, text: `${parent} ${index + 1}`, border: [true, true, false, true] }
+                    } else {
+                        tdArray.push([{ rowSpan, align: { x: 'center', y: 'center' }, text: `${parent} ${index + 1}`, border: [true, true, false, true] }]);
+                    }
+                    buildTableData(value, depth);
                 }
                 //Value
                 else {
@@ -167,11 +172,11 @@ async function convert(req, res) {
         else {
             Object.entries(obj).forEach(([key, value], index) => {
                 if (typeof value === 'object') {
-                    const rowSpan = 1 || Object.keys(flatten(value)).length
+                    const rowSpan = 1
                     !tdArray.length ? tdArray.push([{ rowSpan, text: key, border: [true, true, false, true] }])
                         : index === 0 ? tdArray.at(-1).push({ rowSpan, text: key, border: [true, true, false, true] })
                             : tdArray.push([{ rowSpan, text: key, border: [true, true, false, true] }])
-                    buildTableData(value, depth - 1)
+                    buildTableData(value, depth - 1, key)
                 }
                 //Value
                 else {
@@ -235,14 +240,12 @@ async function convert(req, res) {
     console.log("Printing table")
     const numPage = tablePages.length
     for (const [index, pages] of tablePages.entries()) {
-        //console.log(util.inspect(pages, { depth: null, colors: true }))
-        /*
+        console.log(util.inspect(pages, { depth: null, colors: true }))
         console.log("Row widths check:");
         for (const [i, row] of pages.entries()) {
             const totalColSpan = row.reduce((s, c) => s + (c.colSpan || 1), 0);
             console.log(`Row ${i} colspan total: ${totalColSpan}`);
         }
-        */
         doc.table({
             data: pages,
             defaultStyle: {
@@ -268,6 +271,23 @@ async function convert(req, res) {
 
     //Close the doc
     doc.end()
+}
+
+function countDepthwithArrayIndices(object) {
+    const baseDepth = depth(object)
+
+    const numArray = countArrays(object)
+    return baseDepth - numArray
+}
+
+function countArrays(object) {
+    if (Array.isArray(object)) {
+        return 1 + object.reduce((sum, item) => sum + countArrays(item), 0)
+    } else if (object && typeof o === 'object') {
+        return Object.values(object).reduce((sum, item) => sum + countArrays(item), 0)
+    } else {
+        return 0
+    }
 }
 
 module.exports = convert
