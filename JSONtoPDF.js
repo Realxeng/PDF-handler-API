@@ -362,27 +362,25 @@ async function convert(req, res) {
   let image;
   if (queryValue.attachments) {
     for (const [index, value] of queryValue.attachments.entries()) {
-      doc
-        .font(FONT)
-        .fontSize(14)
-        .text(`Attachment ${index + 1}`);
-      doc.font(FONT).fontSize(12).text(`Name: ${value.name}`);
-      doc.moveDown(0.5);
+        doc.addPage();//start every attachment in a new page
+        doc.font(FONT).fontSize(14).text(`Attachment ${index + 1}`);
+        doc.font(FONT).fontSize(12).text(`Name: ${value.name}`);
+        doc.moveDown(0.5);
 
       try {
         const response = await fetch(value.uri);
-        if (!response.ok)
-          throw new Error(`Failed to fetch: ${response.statusText}`);
+        if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`);
 
         const imageBuffer = await response.arrayBuffer();
         image = Buffer.from(imageBuffer);
 
         // Draw the image with proper size and spacing
         doc.image(image, {
-          fit: [300, 300], // adjust size
+          fit: [doc.page.width - 100, doc.page.height - 150], // adjust size
           align: "center",
+          valign: "center"
         });
-        doc.moveDown(1.5);
+        doc.moveDown(1);
       } catch (error) {
         console.error("Attachment error:", error);
         doc
