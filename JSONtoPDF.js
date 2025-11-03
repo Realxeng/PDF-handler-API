@@ -116,10 +116,6 @@ function convert(req, res) {
         if (Array.isArray(obj)) {
             obj.forEach((value, index) => {
                 if (typeof value === 'object') {
-                    const rowSpan = 1 || Object.keys(flatten(value)).length
-                    !tdArray.length ? tdArray.push([{ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1, border: [true, true, false, true] }])
-                        : index === 0 ? tdArray.at(-1).push({ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1, border: [true, true, false, true] })
-                            : tdArray.push([{ rowSpan, align: { x: 'center', y: 'center' }, text: index + 1, border: [true, true, false, true] }]);
                     buildTableData(value, depth - 1);
                 }
                 //Value
