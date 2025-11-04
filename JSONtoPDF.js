@@ -61,7 +61,7 @@ async function convert(req, res) {
         const { error, value } = joi.array().items(joi.object({
             name: joi.string().required(),
             uri: joi.string().uri().required(),
-        })).min(1).unknown(false).validate(attachmentsBody, { abortEarly: false })
+        }).unknown(false)).min(1).validate(attachmentsBody, { abortEarly: false })
         if (error) {
             return res.status(400).json(error)
         }
