@@ -54,7 +54,7 @@ async function convert(req, res) {
     });
     //Check query validation
     if (error) return res.status(400).json(error)
-    //Check and get attacments
+    //Check and get attachments
     let attachments = false
     const attachmentsBody = req.body.attachments || false
     if (attachmentsBody) {
@@ -67,8 +67,9 @@ async function convert(req, res) {
         }
         attachments = value
     }
-    //Get the data and query
+    //Get the data
     const data = body.data
+    //Get the logo
     let logo = queryValue.logo || false
     if (logo) {
         try {
@@ -297,7 +298,7 @@ async function convert(req, res) {
         });
         if (index < numPage - 1) doc.addPage();
     }
-    //doc.addPage()
+
     doc.text("\n");
 
     // Attachments
@@ -336,6 +337,7 @@ async function convert(req, res) {
         }
         if (queryValue.remarks) doc.addPage()
     }
+
     //Remarks
     if (queryValue.remarks) doc.font(FONT).fontSize(12).text(queryValue.remarks);
 
@@ -343,6 +345,7 @@ async function convert(req, res) {
     doc.end()
 }
 
+//Count the depth of the object
 function objectDepthIgnoringArrays(obj) {
     if (obj && typeof obj === "object") {
         if (Array.isArray(obj)) {
