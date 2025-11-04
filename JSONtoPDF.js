@@ -44,12 +44,6 @@ const schema = joi.object({
         'Times-Roman', 'Times-Bold', 'Times-Italic', 'Times-BoldItalic', 'ZapfDingbats'
     ).default('Times-Roman'),
     logo: joi.string().uri(),
-    attachments: joi.array().items(
-        joi.object({
-            name: joi.string().required(),
-            uri: joi.string().uri().required(),
-        })
-    ).optional(),
 }).unknown(false)
 
 async function convert(req, res) {
@@ -59,7 +53,20 @@ async function convert(req, res) {
         abortEarly: false,
     });
     //Check query validation
-    if (error) return res.status(400).json(error);
+    if (error) return res.status(400).json(error)
+    //Check and get attacments
+    let attachments = false
+    const attachmentsBody = req.body.attachments || false
+    if (attachmentsBody) {
+        const { error, value } = joi.array().items(joi.object({
+            name: joi.string().required(),
+            uri: joi.string().uri().required(),
+        })).min(1).unknown(false).validate(attachmentsBody, { abortEarly: false })
+        if (error) {
+            return res.status(400).json(error)
+        }
+        attachments = value
+    }
     //Get the data and query
     const data = body.data
     let logo = queryValue.logo || false
@@ -295,8 +302,8 @@ async function convert(req, res) {
 
     // Attachments
     let image;
-    if (queryValue.attachments) {
-        for (const [index, value] of queryValue.attachments.entries()) {
+    if (attachments) {
+        for (const [index, value] of attachments.entries()) {
             doc.addPage();//start every attachment in a new page
             doc.font(FONT).fontSize(14).text(`Attachment ${index + 1}`);
             doc.font(FONT).fontSize(12).text(`Name: ${value.name}`);
