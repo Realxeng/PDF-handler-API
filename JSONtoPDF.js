@@ -43,7 +43,13 @@ const schema = joi.object({
         'Helvetica', 'Helvetica-Bold', 'Helvetica-Oblique', 'Helvetica-BoldOblique', 'Symbol',
         'Times-Roman', 'Times-Bold', 'Times-Italic', 'Times-BoldItalic', 'ZapfDingbats'
     ).default('Times-Roman'),
-    logo: joi.string().uri()
+    logo: joi.string().uri(),
+    attachments: joi.array().items(
+        joi.object({
+            name: joi.string().required(),
+            uri: joi.string().uri().required(),
+        })
+    ).optional(),
 }).unknown(false)
 
 async function convert(req, res) {
