@@ -334,13 +334,13 @@ async function convert(req, res) {
                 doc.fillColor("black"); // reset color
             }
         }
-
-        //Remarks
-        if (queryValue.remarks) doc.font(FONT).fontSize(12).text(queryValue.remarks);
-
-        //Close the doc
-        doc.end()
+        if (queryValue.remarks) doc.addPage()
     }
+    //Remarks
+    if (queryValue.remarks) doc.font(FONT).fontSize(12).text(queryValue.remarks);
+
+    //Close the doc
+    doc.end()
 }
 
 function objectDepthIgnoringArrays(obj) {
