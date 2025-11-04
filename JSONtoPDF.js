@@ -353,24 +353,7 @@ function objectDepthIgnoringArrays(obj) {
             return 1 + Math.max(0, ...Object.values(obj).map(value => objectDepthIgnoringArrays(value)));
         }
     }
-    return 0; // Non-object (base case)
-}
-
-function countDepthwithArrayIndices(object) {
-    const baseDepth = depth(object)
-
-    const numArray = countArrays(object)
-    return baseDepth - numArray
-}
-
-function countArrays(object) {
-    if (Array.isArray(object)) {
-        return 1 + object.reduce((sum, item) => sum + countArrays(item), 0)
-    } else if (object && typeof object === 'object') {
-        return Object.values(object).reduce((sum, item) => sum + countArrays(item), 0)
-    } else {
-        return 0
-    }
+    return 0;
 }
 
 module.exports = convert
