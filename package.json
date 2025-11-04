@@ -34,6 +34,7 @@
     "image-size": "^2.0.2",
     "joi": "^18.0.1",
     "object-depth": "^0.0.3",
+    "pdf-lib": "^1.17.1",
     "pdfkit": "^0.17.2"
   },
   "devDependencies": {
