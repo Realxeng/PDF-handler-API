@@ -4,7 +4,7 @@ const { PDFDocument, PDFForm } = require('pdf-lib')
  */
 class PDFHelper {
     /**
-     * 
+     * Create an instance of PDFHelper class
      * @param {PDFDocument} pdfDoc 
      * @param {PDFForm} form 
      */
@@ -32,6 +32,7 @@ class PDFHelper {
      * @param {number} y The position of the textbox from the left of the page
      * @param {number} width The width of the textbox
      * @param {number} height The height of the textbox
+     * @returns {void}
      */
     addTextBox(name, pageNum, x, y, width, height) {
         const pages = this.pdf.getPages()
@@ -42,8 +43,9 @@ class PDFHelper {
 
     /**
      * Fill a form field with the data
-     * @param {string} fieldName 
-     * @param {Object || string} data 
+     * @param {string} fieldName The name of the input field 
+     * @param {(string | number | boolean)} data The data to be placed into the field
+     * @returns {void}
      */
     fillData(fieldName, data) {
         const field = this.form.getTextField(fieldName)
@@ -62,7 +64,7 @@ class PDFHelper {
 
     /**
      * Exports the pdf into buffer without flattening the form fields
-     * @returns {Buffer}
+     * @returns {Buffer} Memory buffer of the completed pdf
      */
     async export() {
         const pdfFormBuffer = await this.pdf.save()
