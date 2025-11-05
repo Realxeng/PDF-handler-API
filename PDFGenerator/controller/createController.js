@@ -61,10 +61,10 @@ async function createController(req, res) {
     //Create the fields template
 
     //Upload the template
-    const response = await template.upload(form.formName, pdfFormBuffer)
+    const response = await template.upload(form.formName, pdfFormBuffer, form.formFields, cred)
     //Check response
     if (response.status != 201) {
-        return res.status(400).json({ message: "Failed to save template" })
+        return res.status(400).json({ message: "Failed to save template", error: response.error })
     }
     //Return the template
     res.setHeader('Content-Type', 'application/pdf')
