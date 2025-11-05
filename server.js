@@ -18,7 +18,7 @@ app.post('/jsontopdf', JSONtoPDF)
  */
 //UI for creating tagging the textbox
 app.post('/createpdf', upload.single("pdf"), createController)
-app.post('/fillpdf', fillPDF)
+app.post('/fillpdf', upload.single("pdf"), fillPDF)
 
 
 //Unknown route
