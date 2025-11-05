@@ -16,15 +16,22 @@ const schema = joi.array().items(joi.object({
 }).unknown(false)).min(1)
 
 async function createController(req, res) {
+    //Validate the pdf file
+    if (!req.file || !req.file.buffer) {
+        return res.status(400).json({ message: 'No PDF file found' })
+    }
+    if (req.file.mimetype !== 'application/json') {
+        return res.status(400).json({ message: "File is not a PDF file" })
+    }
     //Get the pdf file
-    const pdfBuffer = req.file.buffer || false
+    const pdfBuffer = req.file?.buffer || false
     //Get the form fields
     let fields = req.body.fields || false
 
-    //Check for empty form fields
-    if (!fields || !pdfBuffer) {
+    //Check for empty form fields or pdf
+    if (!fields) {
         console.log(fields)
-        return res.status(400).json({ message: "No form fields or pdf found" })
+        return res.status(400).json({ message: "No form fields found" })
     }
 
     //Validate form fields
