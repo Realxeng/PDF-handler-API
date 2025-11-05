@@ -171,65 +171,6 @@ class NocobaseFunctions {
     }
 
     /**
-     * Deletes data from Nocobase
-     * 
-     * @async
-     * @param {{id: number[], cred: { NOCOBASE_TOKEN: string, NOCOBASE_APP: string, DATABASE_URI: string }}} body - The request body retrieved from the API request
-     * @returns {Promise<{ status: number, json: | { message: string, errors: Array<object> }
-     *                                           | { message: string }
-     *                                           | { data: string } }>}
-     */
-    async delete(body) {
-        const credentials = body.cred || process.env
-        //Validate the request
-        const deleteStructure = joi.object({
-            id: joi.array().items(joi.number().integer()).min(1),
-            cred: joi.strip(),
-        })
-        const { error, value } = deleteStructure.validate(body, { abortEarly: false })
-        if (error) return { status: 400, json: { message: error.details.map(d => d.message).join(", "), errors: error.details } }
-
-        //Verify the credentials
-        const { error: credError, value: cred } = validateCredentials(credentials)
-        if (credError) {
-            return { status: 401, json: { message: credError.details.map(d => d.message).join(", "), errors: credError.details } }
-        }
-
-        //Get the credentials
-        const { NOCOBASE_TOKEN, NOCOBASE_APP, DATABASE_URI } = cred
-
-        //Create the payload for nocobase
-        const filter = {
-            id: {
-                $in: value.id.map(id => String(id))
-            }
-        }
-
-        //Delete from Nocobase
-        const responseNB = await fetch(`${this.nocoUrl}api/${this.nocoTable}:destroy?filter=${encodeURIComponent(JSON.stringify(filter))}`, {
-            method: 'POST',
-            headers: {
-                "Content-Type": 'application/json',
-                'Accept': 'application/json',
-                Authorization: `Bearer ${NOCOBASE_TOKEN}`,
-                'X-App': NOCOBASE_APP,
-                'X-Host': DATABASE_URI,
-            },
-        })
-
-        const responseNBJson = await responseNB.json()
-        //console.log(util.inspect(responseNBJson, { depth: null, colors: true }));
-        //Check for errors from Nocobase
-        if (responseNBJson.errors) {
-            return { status: 400, json: { message: responseNBJson.errors.map(e => e.message).join(', ') } }
-        }
-        console.log(`Deleted successfully`)
-        //Return the number of deleted data
-        const dataLength = responseNBJson.data
-        return { status: 200, json: { data: `Deleted ${dataLength} record(s)` } }
-    }
-
-    /**
      * Gets all data from the entity in NocoBase
      * 
      * @param {{NOCOBASE_TOKEN: string, NOCOBASE_APP: string, DATABASE_URI: string}} cred - The authentication and connection credentials to connect to NocoBase
@@ -266,6 +207,37 @@ class NocobaseFunctions {
         }
 
         return { records }
+    }
+
+    /**
+     * Gets data from the entity in NocoBase
+     * 
+     * @param {{NOCOBASE_TOKEN: string, NOCOBASE_APP: string, DATABASE_URI: string}} cred - The authentication and connection credentials to connect to NocoBase
+     * @returns {Promise<{ record?: object, message?: string }>}
+     */
+    async get(cred, id) {
+        if (!id) return res.status(400).json({message: 'Missing ID parameter'})
+        const { error, value } = validateCredentials(cred)
+        if (error) {
+            console.log(error)
+            return res.status(400).json({ message: "Invalid nocobase credentials", error })
+        }
+        const { NOCOBASE_TOKEN, NOCOBASE_APP, DATABASE_URI } = value
+        const res = await fetch(`${this.nocoUrl}api/${this.nocoTable}:get?filter=${encodeURIComponent(JSON.stringify(id))}`, {
+            method: 'GET',
+            headers: {
+                "Content-Type": 'application/json',
+                'Accept': 'application/json',
+                Authorization: `Bearer ${NOCOBASE_TOKEN}`,
+                'X-App': NOCOBASE_APP,
+                'X-Host': DATABASE_URI,
+            },
+        })
+        data = await res.json()
+        if (data.error) {
+            return { message: data.error }
+        }
+        return { record: data.data }
     }
 }
 
