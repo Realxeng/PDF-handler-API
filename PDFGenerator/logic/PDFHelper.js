@@ -44,7 +44,8 @@ class PDFHelper {
      * @param {Object || string} data 
      */
     fillData(fieldName, data) {
-        
+        const field = this.form.getTextField(fieldName)
+        field.setText(data)
     }
 
     /**
