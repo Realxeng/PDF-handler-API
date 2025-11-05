@@ -1,8 +1,10 @@
 const { PDFDocument, PDFForm } = require('pdf-lib')
-
+/**
+ * A helper class to build pdf forms
+ */
 class PDFHelper {
     /**
-     * A helper class to build pdf forms
+     * 
      * @param {PDFDocument} pdfDoc 
      * @param {PDFForm} form 
      */
