@@ -29,16 +29,16 @@ async function createController(req, res) {
     //Get the pdf file
     const pdfBuffer = req.file?.buffer || false
     //Get the form fields
-    let template = req.body.template || false
+    let form = req.body.form || false
 
     //Check for empty form fields or pdf
-    if (!template) {
-        console.log(template)
+    if (!form) {
+        console.log(form)
         return res.status(400).json({ message: "No template found" })
     }
 
     //Validate form fields
-    const { error, value } = schema.validate(template, { abortEarly: false })
+    const { error, value } = schema.validate(form, { abortEarly: false })
     //Check validation error
     if (error) {
         console.log(error)
@@ -46,13 +46,13 @@ async function createController(req, res) {
     }
 
     //Get validated form fields
-    template = value
+    form = value
 
     //Load the pdf
     const PDFForm = await PDFHelper.load(pdfBuffer)
 
     //Build the form inside pdf
-    template.formFields.forEach((field, index) => {
+    form.formFields.forEach((field, index) => {
         PDFForm.addTextBox(...field.field)
     });
 
@@ -61,7 +61,7 @@ async function createController(req, res) {
     //Create the fields template
 
     //Upload the template
-    const response = await template.upload(template.formName, pdfFormBuffer)
+    const response = await template.upload(form.formName, pdfFormBuffer)
     //Check response
     if (response.status != 201) {
         return res.status(400).json({ message: "Failed to save template" })
