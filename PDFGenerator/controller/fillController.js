@@ -1,31 +1,58 @@
 const joi = require('joi')
 const PDFHelper = require('../logic/PDFHelper')
+const NocobaseFunctions = require('../logic/NocobaseFunctions')
 
-const schema = joi.array().items(joi.object({
-    fieldName: joi.string(),
-    data: joi.alternatives(joi.string(), joi.number(), joi.boolean())
-}).unknown(false)).min(1)
+const templateData = new NocobaseFunctions('templates', 'template', 'Template')
+const customerData = new NocobaseFunctions('customers', 'customer', 'Customer')
+
+const schema = joi.object({
+    id: joi.number().integer().required(),
+    formName: joi.string(),
+    formFields: joi.array().items(joi.object({
+        field: joi.object({
+            name: joi.string(),
+            pageNum: joi.number().integer(),
+            x: joi.number(),
+            y: joi.number(),
+            width: joi.number(),
+            height: joi.number()
+        }),
+        dataField: joi.string()
+    }).unknown(false)).min(1)
+}).unknown(false)
 
 async function fillController(req, res) {
     try {
         const pdfBuffer = req.file.buffer
+        const tempId = req.query.templateId
+        const custId = req.query.customerId
+        const cred = req.body.cred
         if (!pdfBuffer) return res.status(400).json({message: 'No PDF file received'})
-        let fields = req.body.fields
-        if (!fields) return res.status(400).json({message: "No field data provided"})
+        if (!tempId) return res.status(400).json({message: "No template ID received"})
+        if (!custId) return res.status(400).json({message: "No customer ID received"})
+        if (!cred) return res.status(400).json({message: "Missing credentials"})
+
+        const result = await templateData.get(cred, tempId)
+        if (!result.record) return res.status(400).json({message: "No template found"})
         
-        const {error, value} = schema.validate(fields, {abortEarly: false})
+        const {error, value: template} = schema.validate(result.record, {abortEarly: false})
         if (error) {
             console.log(error)
-            return res.status(400).json({message: "Invalid form data", error})
+            return res.status(400).json({message: "Invalid template structure", error})
         }
-        fields = value
+
+        const data = await customerData.get(cred, custId)
+        if (!data.record) return res.status(400).json({message: "No customer found"})
 
         const PDFForm = await PDFHelper.load(pdfBuffer)
-        fields.forEach(item => {
-            try {
-                PDFForm.fillData(item.fieldName, item.data)
-            } catch (err) {
-                console.log(`Field not found: ${item.fieldName}`)
+        template.formFields.forEach(({field, dataField}) => {
+            const valueToFill = data.record[dataField]
+            if (valueToFill !== undefined) {
+                try {
+                    PDFForm.fillData(field.name, valueToFill)
+                } catch (err) {
+                    console.log(`Field not found: ${field.name}`)
+                }
             }
         })
         const outputBuffer = await PDFForm.exportFlatten()
