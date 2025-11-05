@@ -19,6 +19,13 @@ const schema = joi.object({
 }).unknown(false)
 
 async function createController(req, res) {
+    let cred = req.body.cred || process.env
+    const { error: credError, value: credValue } = validateCredentials(cred)
+    if (credError) {
+        console.log(error)
+        return res.status(400).json({ message: "Invalid nocobase credentials", credError })
+    }
+    cred = credValue
     //Validate the pdf file
     if (!req.file || !req.file.buffer) {
         return res.status(400).json({ message: 'No PDF file found' })
@@ -70,6 +77,17 @@ async function createController(req, res) {
     res.setHeader('Content-Type', 'application/pdf')
     res.setHeader('Content-Disposition', 'attachment; filename="template.pdf"')
     return res.status(201).send(pdfFormBuffer)
+}
+
+//Validate Nocobase credentials
+function validateCredentials(credentials) {
+    const structure = joi.object({
+        NOCOBASE_TOKEN: joi.string().required(),
+        NOCOBASE_APP: joi.string().required(),
+        DATABASE_URI: joi.string().required(),
+    }).options({ stripUnknown: true })
+
+    return structure.validate(credentials, { abortEarly: false })
 }
 
 module.exports = createController
