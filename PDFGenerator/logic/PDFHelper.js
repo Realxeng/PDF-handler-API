@@ -1,6 +1,6 @@
 const { PDFDocument, PDFForm } = require('pdf-lib')
 
-class CreatePDF {
+class PDFHelper {
     /**
      * A helper class to build pdf forms
      * @param {PDFDocument} pdfDoc 
@@ -14,7 +14,7 @@ class CreatePDF {
     static async load(pdfBuffer) {
         const pdfDoc = await PDFDocument.load(pdfBuffer)
         const form = pdfDoc.getForm()
-        return new CreatePDF(pdfDoc, form)
+        return new PDFHelper(pdfDoc, form)
     }
 
     addTextBox(name, pageNum, x, y, width, height) {
@@ -24,6 +24,10 @@ class CreatePDF {
         textbox.addToPage(page, { x, y, width, height, borderWidth: 0 })
     }
 
+    fillData(fieldName, data) {
+        
+    }
+
     async export() {
         this.form.flatten()
         const pdfFormBuffer = await this.pdf.save()
@@ -31,4 +35,4 @@ class CreatePDF {
     }
 }
 
-module.exports = CreatePDF
+module.exports = PDFHelper
