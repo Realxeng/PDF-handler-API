@@ -3,7 +3,7 @@ const multer = require('multer');
 const PORT = process.env.PORT || 3000;
 const JSONtoPDF = require('./JSONtoPDF/JSONtoPDF')
 const createController = require('./PDFGenerator/controller/createController')
-const fillPDF = require('./PDFGenerator/logic/fillPDF');
+const fillPDF = require('./PDFGenerator/controller/fillController');
 const upload = multer ({ storage: multer.memoryStorage() })
 
 //Intialize Express Server
