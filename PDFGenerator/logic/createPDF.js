@@ -23,6 +23,12 @@ class CreatePDF {
         const textbox = this.form.createTextField(name)
         textbox.addToPage(page, { x, y, width, height, borderWidth: 0 })
     }
+
+    async export() {
+        this.form.flatten()
+        const pdfFormBuffer = await this.pdf.save()
+        return pdfFormBuffer
+    }
 }
 
 module.exports = CreatePDF
