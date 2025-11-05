@@ -1,6 +1,6 @@
-const create = async(req, res) => {
+const upload = async(pdfFormBuffer) => {
     const body = req.body
-    return res.status(200).send('bakekok')
+    return { status: 200 }
 }
 
 const get = async (req, res) => {
@@ -9,5 +9,5 @@ const get = async (req, res) => {
 }
 
 module.exports = {
-    create, get
+    upload, get
 }
