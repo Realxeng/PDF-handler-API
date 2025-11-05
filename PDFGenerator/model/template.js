@@ -1,4 +1,4 @@
-const upload = async(pdfFormBuffer) => {
+const upload = async(formName, pdfFormBuffer) => {
     const body = req.body
     return { status: 200 }
 }
