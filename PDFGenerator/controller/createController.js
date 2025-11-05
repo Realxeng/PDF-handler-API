@@ -2,6 +2,7 @@ const joi = require('joi')
 const PDFHelper = require('../logic/PDFHelper')
 const template = require('../model/template')
 
+//Declare the joi validation schema for form fields
 const schema = joi.array().items(joi.object({
     formField: joi.object({
         name: joi.string(),
