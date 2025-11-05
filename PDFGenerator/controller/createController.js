@@ -1,6 +1,8 @@
-const create = async(req, res) => {
-    const body = req.body
-    return res.status(200).send('kukurukuc')
+const CreatePDF = require('../logic/createPDF')
+
+async function createController (req, res) {
+    const rawpdf = await req.body.arrayBuffer()
+    const PDFForm = new CreatePDF(req.body)
 }
 
-module.exports = create
+module.exports = createController

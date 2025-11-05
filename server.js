@@ -1,9 +1,10 @@
 const express = require('express')
+const multer = require('multer');
 const PORT = process.env.PORT || 3000;
 const JSONtoPDF = require('./JSONtoPDF/JSONtoPDF')
-const createPDF = require('./PDFGenerator/controller/createController')
-const template = require('./PDFGenerator/model/templateNocobase')
-const data = require('./PDFGenerator/model/dataNocobase')
+const createController = require('./PDFGenerator/controller/createController')
+const fillPDF = require('./PDFGenerator/logic/fillPDF');
+const upload = multer ({ storage: multer.memoryStorage() })
 
 //Intialize Express Server
 const app = express()
@@ -16,13 +17,9 @@ app.post('/jsontopdf', JSONtoPDF)
  * Generate and fill pdf from template
  */
 //UI for creating tagging the textbox
-app.get('/create', createPDF)
-//Save the textbox template
-app.post('/template', template.create)
-//Get the textbox template
-app.get('/template', template.get)
-//Get the data from Nocobase
-app.get('/data', data.get)
+app.post('/createpdf', upload.single("pdf"), createController)
+app.post('/fillpdf', fillPDF)
+
 
 //Unknown route
 app.use('/', (req, res) => {
