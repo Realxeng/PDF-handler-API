@@ -16,14 +16,14 @@ const schema = joi.array().items(joi.object({
 
 async function createController(req, res) {
     //Get the pdf file
-    const pdfBuffer = req.file.buffer
+    const pdfBuffer = req.file.buffer || false
     //Get the form fields
     let fields = req.body.fields || false
 
     //Check for empty form fields
-    if (!fields) {
+    if (!fields || !pdfBuffer) {
         console.log(fields)
-        return res.status(400).json({ message: "No form fields found sent" })
+        return res.status(400).json({ message: "No form fields or pdf found" })
     }
 
     //Validate form fields
@@ -44,7 +44,7 @@ async function createController(req, res) {
     fields.forEach((field, index) => {
         PDFForm.addTextBox(...field.formField)
     });
-    
+
     //Export the pdf template with form
     const pdfFormBuffer = await PDFForm.export()
     //Create the fields template
