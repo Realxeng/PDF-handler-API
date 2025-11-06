@@ -29,6 +29,11 @@ const get = async (req, res) => {
     return res.status(200).send('kokekab')
 }
 
+const getAll = async (cred) => {
+    const response = await templateNocobase.getAll(cred)
+    return response
+}
+
 module.exports = {
-    upload, get
+    upload, get, getAll
 }
