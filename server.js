@@ -3,6 +3,8 @@ const multer = require('multer');
 const JSONtoPDF = require('./JSONtoPDF/JSONtoPDF')
 const template = require('./PDFGenerator/controller/templateController')
 const data = require('./PDFGenerator/controller/dataController')
+const user = require('./PDFGenerator/controller/userController')
+require('dotenv').config()
 
 //Intialize Express Server
 const PORT = process.env.PORT || 3000;
@@ -22,6 +24,8 @@ app.post('/fillpdf', upload.single("pdf"), template.fill)
 app.get('/template/all', template.getAll)
 app.get('/data/schema', data.get)
 
+//User authorization route
+app.post('/login', user.login)
 
 //Unknown route
 app.use('/', (req, res) => {

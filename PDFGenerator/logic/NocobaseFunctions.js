@@ -213,6 +213,7 @@ class NocobaseFunctions {
      * Gets data from the entity in NocoBase
      * 
      * @param {{NOCOBASE_TOKEN: string, NOCOBASE_APP: string, DATABASE_URI: string}} cred - The authentication and connection credentials to connect to NocoBase
+     * @param {number | string} id - The specific id of record to be requested
      * @returns {Promise<{ record?: object, message?: string }>}
      */
     async get(cred, id) {
