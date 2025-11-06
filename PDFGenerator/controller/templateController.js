@@ -73,6 +73,8 @@ async function create(req, res) {
     //Return the template
     res.setHeader('Content-Type', 'application/pdf')
     res.setHeader('Content-Disposition', 'attachment; filename="template.pdf"')
+    res.setHeader('X-File-ID', 'ID') // To-do: get file id after upload
+    res.download(pdfFormBuffer)
     return res.status(201).send(pdfFormBuffer)
 }
 
