@@ -1,14 +1,14 @@
 const express = require('express')
 const multer = require('multer');
-const PORT = process.env.PORT || 3000;
 const JSONtoPDF = require('./JSONtoPDF/JSONtoPDF')
-const fillPDF = require('./PDFGenerator/controller/fillController');
-const upload = multer ({ storage: multer.memoryStorage() })
 const template = require('./PDFGenerator/controller/templateController')
+const data = require('./PDFGenerator/controller/dataController')
 
 //Intialize Express Server
+const PORT = process.env.PORT || 3000;
 const app = express()
 app.use(express.json())
+const upload = multer ({ storage: multer.memoryStorage() })
 
 //Route to convert JSON to PDF
 app.post('/jsontopdf', JSONtoPDF)
@@ -20,6 +20,7 @@ app.post('/jsontopdf', JSONtoPDF)
 app.post('/createpdf', upload.single("pdf"), template.create)
 app.post('/fillpdf', upload.single("pdf"), template.fill)
 app.get('/template/all', template.getAll)
+app.get('/data/schema', data.get)
 
 
 //Unknown route
