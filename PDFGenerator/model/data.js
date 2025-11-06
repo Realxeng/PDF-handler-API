@@ -1,6 +1,9 @@
-const get = async (req, res) => {
-    const body = req.body
-    return res.status(200).send('cukurukuk')
+const NocobaseFunctions = require('../logic/NocobaseFunctions')
+
+const get = async (tableName, nocoUrl, cred, custId) => {
+    const data = new NocobaseFunctions(tableName, tableName, nocoUrl)
+    const response = await data.get(cred, custId)
+    return response
 }
 
 module.exports = {

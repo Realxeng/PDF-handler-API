@@ -1,7 +1,8 @@
 const joi = require('joi')
 const PDFHelper = require('../logic/PDFHelper')
 const template = require('../model/template')
-const NocobaseFunctions = require('../logic/NocobaseFunctions')
+const customer = require('../model/data')
+const user = require('../model/user')
 
 //Function to create a template
 async function create(req, res) {
@@ -93,8 +94,6 @@ async function getAll(req, res) {
 
 //Function to fill data to template
 async function fill(req, res) {
-    const templateData = new NocobaseFunctions('templates', 'template', 'Template')
-    const customerData = new NocobaseFunctions('customers', 'customer', 'Customer')
     const schema = joi.object({
         id: joi.number().integer().required(),
         formName: joi.string(),
@@ -115,26 +114,43 @@ async function fill(req, res) {
         const pdfBuffer = req.file.buffer
         const tempId = req.query.templateId
         const custId = req.query.customerId
-        const cred = req.body.cred
+        const cred = req.body.cred || null
+
         if (!pdfBuffer) return res.status(400).json({ message: 'No PDF file received' })
         if (!tempId) return res.status(400).json({ message: "No template ID received" })
         if (!custId) return res.status(400).json({ message: "No customer ID received" })
-        if (!cred) return res.status(400).json({ message: "Missing credentials" })
+        
+        //Get user data Nocobase Credentials
+        const userResponse = await user.get(cred, custId)
+        if (userResponse.message) {
+            return res.status(userResponse.status).json({ message: userResponse.message })
+        }
+        let userCred
+        try {
+            userCred = {
+                NOCOBASE_TOKEN: userResponse.record.nocobase_token,
+                NOCOBASE_APP: userResponse.record.nocobase_app,
+                DATABASE_URI: userResponse.record.nocobase_host,
+            }
+        } catch (error) {
+            console.log(error)
+            return res.status(400).json({ message: 'Error getting user nocobase credentials' })
+        }
+        
+        const templateResponse = await template.get({ NOCOBASE_TOKEN: process.env.USERNOCOTOKEN, NOCOBASE_APP: process.env.USERNOCOAPP, DATABASE_URI: process.env.USERNOCOHOST }, tempId)
+        if (!templateResponse.record) return res.status(400).json({ message: "No template found" })
 
-        const result = await templateData.get(cred, tempId)
-        if (!result.record) return res.status(400).json({ message: "No template found" })
-
-        const { error, value: template } = schema.validate(result.record, { abortEarly: false })
+        const { error, value: pdfTemplate } = schema.validate(templateResponse.record, { abortEarly: false })
         if (error) {
             console.log(error)
             return res.status(400).json({ message: "Invalid template structure", error })
         }
 
-        const data = await customerData.get(cred, custId)
+        const data = await customer.get(pdfTemplate.tableName, userResponse.record.nocobase_url, userCred, custId)
         if (!data.record) return res.status(400).json({ message: "No customer found" })
 
         const PDFForm = await PDFHelper.load(pdfBuffer)
-        template.formFields.forEach(({ field, dataField }) => {
+        pdfTemplate.formFields.forEach(({ field, dataField }) => {
             const valueToFill = data.record[dataField]
             if (valueToFill !== undefined) {
                 try {
