@@ -170,7 +170,13 @@ class NocobaseFunctions {
         return { status: 201, json: { data: `Data updated: ${updatedLength} entries, Data created: ${createdLength} entries` } }
     }
 
-
+    /**
+     * Upload a file into nocobase
+     * 
+     * @param {Buffer} file - The file in memory to be uploaded 
+     * @param {{ NOCOBASE_TOKEN: string, NOCOBASE_APP: string, DATABASE_URI: string }} cred - The credentials used to connect to nocobase API
+     * @returns 
+     */
     async uploadFile(file, cred) {
         const credentials = cred || false
         //Verify all credentials exists
