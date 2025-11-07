@@ -180,7 +180,7 @@ class NocobaseFunctions {
     async uploadFile(file, cred) {
         const credentials = cred || false
         //Verify all credentials exists
-        const { error: credError, value: cred } = validateCredentials(credentials)
+        const { error: credError, value } = validateCredentials(credentials)
         if (credError) return { status: 401, json: { message: credError.details.map(d => d.message).join(", "), errors: credError.details } }
 
         //Create payload
