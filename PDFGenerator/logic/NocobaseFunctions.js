@@ -174,9 +174,10 @@ class NocobaseFunctions {
      * Gets all data from the entity in NocoBase
      * 
      * @param {{NOCOBASE_TOKEN: string, NOCOBASE_APP: string, DATABASE_URI: string}} cred - The authentication and connection credentials to connect to NocoBase
+     * @param {Object | null} filter - The filter to be used when sending the get request
      * @returns {Promise<{ records?: object[], message?: string }>}
      */
-    async getAll(cred) {
+    async getAll(cred, filter = null) {
         const { error, value } = validateCredentials(cred)
         if (error) {
             console.log(error)
@@ -186,7 +187,7 @@ class NocobaseFunctions {
         let records = [], data = []
         let page = 1
         do {
-            const res = await fetch(`${this.nocoUrl}api/${this.nocoTable}:list?page=${page}`, {
+            const res = await fetch(`${this.nocoUrl}api/${this.nocoTable}:list?page=${page}${filter ? `&filter=${encodeURIComponent(JSON.stringify(filter))}` : ''}`, {
                 method: 'GET',
                 headers: {
                     "Content-Type": 'application/json',
