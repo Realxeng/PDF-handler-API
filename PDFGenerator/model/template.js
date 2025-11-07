@@ -29,7 +29,7 @@ const upload = async(formName, tableName, pdfFormBuffer, formFields, nocoApp, cr
         ],
         cred
     }
-    const response = await templateNocobase.upload(body, schema)
+    const response = await templateNocobase.uploadFile(pdfFormBuffer, cred)
     return response
 }
 

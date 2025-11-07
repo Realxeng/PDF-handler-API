@@ -170,6 +170,42 @@ class NocobaseFunctions {
         return { status: 201, json: { data: `Data updated: ${updatedLength} entries, Data created: ${createdLength} entries` } }
     }
 
+
+    async uploadFile(file, cred) {
+        const credentials = cred || false
+        //Verify all credentials exists
+        const { error: credError, value: cred } = validateCredentials(credentials)
+        if (credError) return { status: 401, json: { message: credError.details.map(d => d.message).join(", "), errors: credError.details } }
+
+        //Create payload
+        const formData = new FormData()
+        formData.append("file", file)
+
+        console.log(`Creating file to nocobase`)
+        try {
+            const response = await fetch(`${this.nocoUrl}api/${this.nocoTable}:create`, {
+                method: 'POST',
+                headers: {
+                    "Content-Type": 'application/json',
+                    'Accept': 'application/json',
+                    Authorization: `Bearer ${NOCOBASE_TOKEN}`,
+                    'X-App': NOCOBASE_APP,
+                    'X-Host': DATABASE_URI,
+                },
+                body: formData
+            })
+            const responseJson = await response.json()
+            //Check for errors
+            if (responseJson.errors) {
+                return { status: 400, json: { message: responseJson.errors[0].message, errors: responseJson.errors } }
+            }
+            return { status: response.status, json: { data: responseJson.data }}
+        } catch (error) {
+            console.log(error)
+            return { status: 500, json: { message: `Error creating ${this.name} on nocobase` } }
+        }
+    }
+
     /**
      * Gets all data from the entity in NocoBase
      * 
@@ -218,7 +254,7 @@ class NocobaseFunctions {
      * @returns {Promise<{ record?: object, message?: string }>}
      */
     async get(cred, id) {
-        if (!id) return res.status(400).json({message: 'Missing ID parameter'})
+        if (!id) return res.status(400).json({ message: 'Missing ID parameter' })
         const { error, value } = validateCredentials(cred)
         if (error) {
             console.log(error)
