@@ -6,10 +6,13 @@ const get = async (tableName, nocoUrl, cred, custId) => {
     return response
 }
 
-const getAll = async (tableName, nocoApp, cred, custId) => {
-
+const getAll = async (tableName, nocoUrl, cred) => {
+    const data = new NocobaseFunctions(tableName, tableName, nocoUrl)
+    const response = await data.getAll(cred)
+    return response
 }
 
 module.exports = {
-    get
+    get,
+    getAll
 }
