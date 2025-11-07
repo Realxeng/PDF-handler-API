@@ -8,7 +8,7 @@ const user = require('../model/user')
 async function create(req, res) {
     //Declare the joi validation schema for form fields
     const schema = joi.object({
-        title: joi.string(),
+        name: joi.string(),
         table_name: joi.string(),
         form_fields: joi.array().items(joi.object({
             field: joi.object({
@@ -70,14 +70,14 @@ async function create(req, res) {
     //Create the fields template
 
     //Upload the template
-    const response = await template.upload(form.title, form.table_name, pdfFormBuffer, form.form_fields, nocoApp, cred)
+    const response = await template.upload(form.table_name, pdfFormBuffer, form.form_fields, nocoApp, cred)
     //Check response
     if (response.status != 201) {
         return res.status(400).json({ message: "Failed to save template", error: response.json.message })
     }
     //Return the template
     res.setHeader('Content-Type', 'application/pdf')
-    res.setHeader('Content-Disposition', 'attachment; filename="template.pdf"')
+    res.setHeader('Content-Disposition', `attachment; filename="${form.name || 'template'}.pdf"`)
     res.setHeader('X-File-ID', 'ID') // To-do: get file id after upload
     res.download(pdfFormBuffer)
     return res.status(201).send(pdfFormBuffer)
