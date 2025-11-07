@@ -29,8 +29,9 @@ const get = async(cred, tempId) => {
     return response
 }
 
-const getAll = async(cred) => {
-    const response = await templateNocobase.getAll(cred)
+const getAll = async(cred, nocoApp) => {
+    const filter = { nocobase_app: nocoApp }
+    const response = await templateNocobase.getAll(cred, filter)
     return response
 }
 
