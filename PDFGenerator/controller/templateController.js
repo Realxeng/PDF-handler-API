@@ -8,9 +8,9 @@ const user = require('../model/user')
 async function create(req, res) {
     //Declare the joi validation schema for form fields
     const schema = joi.object({
-        formName: joi.string(),
-        tableName: joi.string(),
-        formFields: joi.array().items(joi.object({
+        title: joi.string(),
+        table_name: joi.string(),
+        form_fields: joi.array().items(joi.object({
             field: joi.object({
                 name: joi.string(),
                 pageNum: joi.number().integer(),
@@ -19,11 +19,11 @@ async function create(req, res) {
                 width: joi.number(),
                 height: joi.number()
             }),
-            dataField: joi.string()
+            data_field: joi.string()
         }).unknown(false)).min(1),
     }).unknown(false)
 
-    let cred = req.body.cred || process.env
+    let cred = req.body.cred || { NOCOBASE_TOKEN: process.env.USERNOCOTOKEN, NOCOBASE_APP: process.env.USERNOCOAPP, DATABASE_URI: process.env.USERNOCOHOST }
     const nocoApp = req.body.nocoApp || false
     if (!nocoApp) {
         return res.status(400).json({ message: 'No user nocobase found' })
@@ -61,7 +61,7 @@ async function create(req, res) {
     const PDFForm = await PDFHelper.load(pdfBuffer)
 
     //Build the form inside pdf
-    form.formFields.forEach((field, index) => {
+    form.form_fields.forEach((field, index) => {
         PDFForm.addTextBox(...field.field)
     });
 
@@ -70,10 +70,10 @@ async function create(req, res) {
     //Create the fields template
 
     //Upload the template
-    const response = await template.upload(form.formName, form.tableName, pdfFormBuffer, form.formFields, nocoApp, cred)
+    const response = await template.upload(form.title, form.table_name, pdfFormBuffer, form.form_fields, nocoApp, cred)
     //Check response
     if (response.status != 201) {
-        return res.status(400).json({ message: "Failed to save template", error: response.error })
+        return res.status(400).json({ message: "Failed to save template", error: response.json.message })
     }
     //Return the template
     res.setHeader('Content-Type', 'application/pdf')

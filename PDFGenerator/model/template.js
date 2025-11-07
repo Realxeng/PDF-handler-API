@@ -1,35 +1,40 @@
 const NocobaseFunctions = require('../logic/NocobaseFunctions')
 const templateNocobase = new NocobaseFunctions(templates, Templates, process.env.USERNOCOURL || 'http://localhost:13000')
 
-const upload = async(formName, tableName, pdfFormBuffer, formFields, nocoApp, cred) => {
+const upload = async(title, table_name, pdfFormBuffer, form_fields, nocoApp, cred) => {
     const schema = joi.object({
-        filename: joi.string(),
+        title: joi.string(),
         form_fields: joi.array().items(joi.object({
             field: joi.object({
                 name: joi.string(),
             }),
             data_field: joi.string()
-        }).unknown(false)).min(1)
+        }).unknown(false)).min(1),
+        nocobase_app: joi.string(),
+        table_name: joi.string(),
     }).unknown(false)
+
+    const response = await templateNocobase.uploadFile(pdfFormBuffer, cred)
+    if (response.json.message) {
+        return response
+    }
+
+    const id = response.json.data.id
+
     const body = {
         values: [
             {
-                filename: formName,
-                form_fields: formFields.map( (formfield) => {
-                    return {
-                        field: {
-                            name: formfield.field.name
-                        },
-                        data_field: formfield.dataField
-                    }
-                }),
+                id,
+                title,
+                form_fields,
                 nocobase_app: nocoApp,
-                table_name: tableName
+                table_name,
             }
         ],
         cred
     }
-    const response = await templateNocobase.uploadFile(pdfFormBuffer, cred)
+
+    const detailsResponse = await templateNocobase.upload(body, cred)
     return response
 }
 
