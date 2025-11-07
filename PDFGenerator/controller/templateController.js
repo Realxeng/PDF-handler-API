@@ -9,6 +9,7 @@ async function create(req, res) {
     //Declare the joi validation schema for form fields
     const schema = joi.object({
         formName: joi.string(),
+        tableName: joi.string(),
         formFields: joi.array().items(joi.object({
             field: joi.object({
                 name: joi.string(),
@@ -19,10 +20,14 @@ async function create(req, res) {
                 height: joi.number()
             }),
             dataField: joi.string()
-        }).unknown(false)).min(1)
+        }).unknown(false)).min(1),
     }).unknown(false)
 
     let cred = req.body.cred || process.env
+    const nocoApp = req.body.nocoApp || false
+    if (!nocoApp) {
+        return res.status(400).json({ message: 'No user nocobase found' })
+    }
     //Validate the pdf file
     if (!req.file || !req.file.buffer) {
         return res.status(400).json({ message: 'No PDF file found' })
@@ -65,7 +70,7 @@ async function create(req, res) {
     //Create the fields template
 
     //Upload the template
-    const response = await template.upload(form.formName, pdfFormBuffer, form.formFields, cred)
+    const response = await template.upload(form.formName, form.tableName, pdfFormBuffer, form.formFields, nocoApp, cred)
     //Check response
     if (response.status != 201) {
         return res.status(400).json({ message: "Failed to save template", error: response.error })
