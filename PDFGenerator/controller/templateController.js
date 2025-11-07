@@ -101,7 +101,7 @@ async function getAll(req, res) {
             return res.status(data.status || 500).json({ message: data.message })
         }
     }
-    return res.status(200).json({ data: data.records })
+    return res.status(200).json({ data: data.data })
 }
 
 //Function to fill data to template
