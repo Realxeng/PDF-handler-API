@@ -85,7 +85,7 @@ async function create(req, res) {
 
 //Function to get all templates
 async function getAll(req, res) {
-    const cred = req.body.cred || { NOCOBASE_TOKEN: process.env.USERNOCOTOKEN, NOCOBASE_APP: process.env.USERNOCOAPP, DATABASE_URI: process.env.USERNOCOHOST }
+    const cred = req?.body?.cred ?? { NOCOBASE_TOKEN: process.env.USERNOCOTOKEN, NOCOBASE_APP: process.env.USERNOCOAPP, DATABASE_URI: process.env.USERNOCOHOST }
     const nocoApp = req.body.nocoApp || false
     if (!nocoApp) {
         return res.status(400).json({ message: 'User nocobase not found' })
@@ -97,7 +97,7 @@ async function getAll(req, res) {
             console.log(data.error)
             return res.status(data.status || 500).json({ message: data.message, error: data.error })
         } else {
-            console.log(message)
+            console.log(data.message)
             return res.status(data.status || 500).json({ message: data.message })
         }
     }
