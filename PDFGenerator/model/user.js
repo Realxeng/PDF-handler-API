@@ -11,32 +11,35 @@ async function get(credentials, uid) {
 async function verifyUser(acc, pwd){
     const loginUrl = `${process.env.USERNOCOURL}api/auth:signIn`
 
-    //Post the credentials to nocobase
-    const response = await fetch(loginUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Authenticator': 'basic',
-            'X-App': process.env.USERNOCOAPP
-        },
-        body: JSON.stringify({
-            account: acc,
-            password: pwd,
+    try {
+        //Post the credentials to nocobase
+        const response = await fetch(loginUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Authenticator': 'basic',
+                'X-App': process.env.USERNOCOAPP
+            },
+            body: JSON.stringify({
+                account: acc,
+                password: pwd,
+            })
         })
-    })
-        //Check for rejection
-    if (!response.ok) {
-        const errorText = await response.text();
-        console.error("NocoBase login failed:", errorText);
-        return res.status(response.status).json({
-            message: "Invalid credentials or failed to connect to NocoBase.",
-        });
+            //Check for rejection
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("NocoBase login failed:", errorText);
+            throw new Error("Invalid credentials or failed to connect to NocoBase.");
+        }
+        const data = await response.json();
+        return {
+        id: data?.data?.user?.id,
+        nickname: data?.data?.user?.nickname,
+      };
+    } catch (error) {
+        console.error("verifyUser error:", error);
+        throw error;
     }
-    const data = await response.json();
-    return {
-    id: data?.data?.user?.id,
-    nickname: data?.data?.user?.nickname,
-  };
 }
 
 module.exports = {
