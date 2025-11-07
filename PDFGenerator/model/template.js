@@ -1,5 +1,5 @@
 const NocobaseFunctions = require('../logic/NocobaseFunctions')
-const templateNocobase = new NocobaseFunctions('templates', 'Templates', process.env.USERNOCOURL || 'http://localhost:13000')
+const templateNocobase = new NocobaseFunctions('templates', 'Templates', process.env.USERNOCOURL || 'http://localhost:13000/')
 
 const upload = async(table_name, pdfFormBuffer, form_fields, nocoApp, cred) => {
     const schema = joi.object({

@@ -223,33 +223,38 @@ class NocobaseFunctions {
         const { error, value } = validateCredentials(cred)
         if (error) {
             console.log(error)
-            return res.status(400).json({ message: "Invalid nocobase credentials", error })
+            return { status: 400, json: { message: "Invalid nocobase credentials", error } }
         }
         const { NOCOBASE_TOKEN, NOCOBASE_APP, DATABASE_URI } = value
         let records = [], data = []
         let page = 1
-        do {
-            const res = await fetch(`${this.nocoUrl}api/${this.nocoTable}:list?page=${page}${filter ? `&filter=${encodeURIComponent(JSON.stringify(filter))}` : ''}`, {
-                method: 'GET',
-                headers: {
-                    "Content-Type": 'application/json',
-                    'Accept': 'application/json',
-                    Authorization: `Bearer ${NOCOBASE_TOKEN}`,
-                    'X-App': NOCOBASE_APP,
-                    'X-Host': DATABASE_URI,
-                },
-            })
-            data = await res.json()
-            records = records.concat(data.data)
-            page++
+        try {
+            do {
+                const res = await fetch(`${this.nocoUrl}api/${this.nocoTable}:list?${filter ? `filter=${encodeURIComponent(JSON.stringify(filter))}&` : ''}page=${page}`, {
+                    method: 'GET',
+                    headers: {
+                        "Content-Type": 'application/json',
+                        'Accept': 'application/json',
+                        Authorization: `Bearer ${NOCOBASE_TOKEN}`,
+                        'X-App': NOCOBASE_APP,
+                        'X-Host': DATABASE_URI,
+                    },
+                });
+                data = await res.json()
+                records = records.concat(data.data)
+                page++
+            }
+            while (data.meta && data.meta.totalPage >= page);
+        } catch (error) {
+            console.log(error)
+            return { status: 500, json: { message: `Failed to get ${this.nocoTable}`, error: error} }
         }
-        while (data.meta && data.meta.totalPage >= page);
 
         if (data.error) {
-            return { message: data.error }
+            return { status: 500, json: { message: data.error } }
         }
 
-        return { records }
+        return { status: 200, json: { data: records } }
     }
 
     /**
