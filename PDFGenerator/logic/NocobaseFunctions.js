@@ -272,7 +272,7 @@ class NocobaseFunctions {
             return res.status(400).json({ message: "Invalid nocobase credentials", error })
         }
         const { NOCOBASE_TOKEN, NOCOBASE_APP, DATABASE_URI } = value
-        const res = await fetch(`${this.nocoUrl}api/${this.nocoTable}:get?filter=${encodeURIComponent(JSON.stringify(id))}`, {
+        const res = await fetch(`${this.nocoUrl}api/${this.nocoTable}:get?filter=${encodeURIComponent(JSON.stringify({id}))}`, {
             method: 'GET',
             headers: {
                 "Content-Type": 'application/json',
