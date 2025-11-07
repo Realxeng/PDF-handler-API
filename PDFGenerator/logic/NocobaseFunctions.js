@@ -282,7 +282,7 @@ class NocobaseFunctions {
                 'X-Host': DATABASE_URI,
             },
         })
-        data = await res.json()
+        const data = await res.json()
         if (data.error) {
             return { message: data.error }
         }
