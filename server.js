@@ -23,6 +23,7 @@ app.post('/createpdf', upload.single("pdf"), template.create)
 app.post('/fillpdf', upload.single("pdf"), template.fill)
 app.post('/templates/all', template.getAll)
 app.get('/data/schema', data.get)
+app.get('/data/list', data.getAll)
 
 //User authorization route
 app.post('/login', user.login)
