@@ -1,48 +1,30 @@
 const user = require('../model/user');
-import dotenv from "dotenv";
-dotenv.config();
 
 async function login(req, res) {
-    const loginUrl = `${process.env.USERNOCOURL}api/auth:signIn`
-    //get the username & password
-    const { account, password } = req.body;
+    const {account, password} = req.body;
 
-    try{
-        //Post the credentials to nocobase
-        const response = await fetch(loginUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Authenticator': 'basic',
-                'X-App': process.env.USERNOCOAPP
-            },
-            body: JSON.stringify({
-                account: account,
-                password: password,
-            })
-        })
-        //Check for rejection
-    if (!response.ok) {
-        const errorText = await response.text();
-        console.error("NocoBase login failed:", errorText);
-        return res.status(response.status).json({
-            message: "Invalid credentials or failed to connect to NocoBase.",
-        });
+    if (!account || !password) {
+      return res.status(400).json({ message: "Missing credentials" });
     }
-        const data = await response.json()
-        //Cache the token in cookies
-        const token = data?.data?.token;
-        //Return the token
-        if(token){
-            return res.status(200).json({ token });
+
+    try {
+        const result = await user.verifyUser(account, password);
+    
+        if (!result) {
+          return res.status(401).json({ message: "Invalid username or password" });
         }
-        else {
-            return res.status(500).json({ message: "Error getting session token." });
-        }
-    }catch(error){
-        console.error("Login error:", error);
+    
+        // Return success response to Flutter
+        return res.status(200).json({
+          message: "Login successful",
+          id: result.id,
+          nickname: result.nickname,
+        });
+
+    } catch (error) {
+        console.error("Login controller error:", error);
         return res.status(500).json({
-            message: error.message || "Unexpected error during login.",
+            message: error.message || "Internal server error",
         });
     }
 }
