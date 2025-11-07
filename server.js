@@ -1,10 +1,10 @@
 const express = require('express')
 const multer = require('multer');
+require('dotenv').config()
 const JSONtoPDF = require('./JSONtoPDF/JSONtoPDF')
 const template = require('./PDFGenerator/controller/templateController')
 const data = require('./PDFGenerator/controller/dataController')
 const user = require('./PDFGenerator/controller/userController')
-require('dotenv').config()
 
 //Intialize Express Server
 const PORT = process.env.PORT || 3000;
