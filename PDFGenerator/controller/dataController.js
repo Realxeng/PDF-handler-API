@@ -35,8 +35,8 @@ async function getAll(req, res) {
         }
 
         const data = await customer.getAll(templateResponse.record.table_name, userResponse.record.nocobase_url, userCred)
-        if (!data.records) return res.status(404).json({ message: "No customer found" })
-        return res.status(200).send(data.records)
+        if (!data.json.data) return res.status(404).json({ message: "No customer found" })
+        return res.status(200).send(data.json.data)
     } catch (err) {
         console.error('Error in getAll:', err)
         return res.status(500).json({ message: "Server error getting customer list", error: err.message });

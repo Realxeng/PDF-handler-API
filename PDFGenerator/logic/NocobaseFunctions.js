@@ -249,11 +249,9 @@ class NocobaseFunctions {
             console.log(error)
             return { status: 500, json: { message: `Failed to get ${this.nocoTable}`, error: error} }
         }
-
         if (data.error) {
             return { status: 500, json: { message: data.error } }
         }
-
         return { status: 200, json: { data: records } }
     }
 
@@ -294,7 +292,7 @@ class NocobaseFunctions {
 function validateCredentials(credentials) {
     const structure = joi.object({
         NOCOBASE_TOKEN: joi.string().required(),
-        NOCOBASE_APP: joi.string().required(),
+        NOCOBASE_APP: joi.string().allow(''),
         DATABASE_URI: joi.string().required(),
     }).options({ stripUnknown: true })
 
