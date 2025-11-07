@@ -6,6 +6,10 @@ const get = async (tableName, nocoUrl, cred, custId) => {
     return response
 }
 
+const getAll = async (tableName, nocoApp, cred, custId) => {
+
+}
+
 module.exports = {
     get
 }

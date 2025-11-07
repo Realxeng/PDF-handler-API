@@ -141,7 +141,7 @@ async function fill(req, res) {
             userCred = {
                 NOCOBASE_TOKEN: userResponse.record.nocobase_token,
                 NOCOBASE_APP: userResponse.record.nocobase_app,
-                DATABASE_URI: userResponse.record.nocobase_host,
+                DATABASE_URI: process.env.USERNOCOHOST,
             }
         } catch (error) {
             console.log(error)
