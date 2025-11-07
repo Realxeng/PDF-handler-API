@@ -21,7 +21,7 @@ app.post('/jsontopdf', JSONtoPDF)
 //UI for creating tagging the textbox
 app.post('/createpdf', upload.single("pdf"), template.create)
 app.post('/fillpdf', upload.single("pdf"), template.fill)
-app.get('/templates/all', template.getAll)
+app.post('/templates/all', template.getAll)
 app.get('/data/schema', data.get)
 
 //User authorization route
