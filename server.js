@@ -31,7 +31,7 @@ app.post('/fillpdf', upload.single("pdf"), template.fill)
 app.post('/templates/all', template.getAll)
 app.get('/user/noco_app', user.getNocoApp)
 app.get('/data/schema', data.get)
-app.get('/data/list', data.getAll)
+app.post('/data/list', data.getAll)
 
 //User authorization route
 app.post('/login', user.login)
