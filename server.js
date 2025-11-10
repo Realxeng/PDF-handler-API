@@ -29,6 +29,7 @@ app.post('/jsontopdf', JSONtoPDF)
 app.post('/createpdf', upload.single("pdf"), template.create)
 app.post('/fillpdf', upload.single("pdf"), template.fill)
 app.post('/templates/all', template.getAll)
+app.get('/user/noco_app', user.getNocoApp)
 app.get('/data/schema', data.get)
 app.get('/data/list', data.getAll)
 

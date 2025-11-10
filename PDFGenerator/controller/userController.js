@@ -29,6 +29,18 @@ async function login(req, res) {
     }
 }
 
+async function getNocoApp(req, res) {
+  const uid = req.query.uid
+  const response = await user.get(null, uid)
+  if (response.message) {
+    return res.status(response.status).json(response.json)
+  }
+  const userData = response.record
+  const nocoApp = userData.nocobase_app
+  return res.status(200).json({ data: nocoApp })
+}
+
 module.exports = {
-    login
+    login,
+    getNocoApp
 }
