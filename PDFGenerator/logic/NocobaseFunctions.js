@@ -205,7 +205,7 @@ class NocobaseFunctions {
             if (responseJson.errors) {
                 return { status: 400, json: { message: responseJson.errors[0].message, errors: responseJson.errors } }
             }
-            return { status: response.status, json: { data: responseJson.data }}
+            return { status: response.status, json: { data: responseJson.data } }
         } catch (error) {
             console.log(error)
             return { status: 500, json: { message: `Error creating ${this.name} on nocobase` } }
@@ -247,7 +247,7 @@ class NocobaseFunctions {
             while (data.meta && data.meta.totalPage >= page);
         } catch (error) {
             console.log(error)
-            return { status: 500, json: { message: `Failed to get ${this.nocoTable}`, error: error} }
+            return { status: 500, json: { message: `Failed to get ${this.nocoTable}`, error: error } }
         }
         if (data.error) {
             return { status: 500, json: { message: data.error } }
@@ -260,17 +260,17 @@ class NocobaseFunctions {
      * 
      * @param {{NOCOBASE_TOKEN: string, NOCOBASE_APP: string, DATABASE_URI: string}} cred - The authentication and connection credentials to connect to NocoBase
      * @param {number | string} id - The specific id of record to be requested
-     * @returns {Promise<{ record?: object, message?: string }>}
+     * @returns {Promise<{ status: number, record?: object, message?: string }>}
      */
     async get(cred, id) {
-        if (!id) return res.status(400).json({ message: 'Missing ID parameter' })
+        if (!id) return { status: 400, json: { message: 'Missing ID parameter' } }
         const { error, value } = validateCredentials(cred)
         if (error) {
             console.log(error)
-            return res.status(400).json({ message: "Invalid nocobase credentials", error })
+            return { status: 400, json: { message: 'Invalid nocobase credentials'} , error }
         }
         const { NOCOBASE_TOKEN, NOCOBASE_APP, DATABASE_URI } = value
-        const res = await fetch(`${this.nocoUrl}api/${this.nocoTable}:get?filter=${encodeURIComponent(JSON.stringify({id}))}`, {
+        const res = await fetch(`${this.nocoUrl}api/${this.nocoTable}:get?filter=${encodeURIComponent(JSON.stringify({ id }))}`, {
             method: 'GET',
             headers: {
                 "Content-Type": 'application/json',
