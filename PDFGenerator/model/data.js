@@ -23,14 +23,38 @@ const getTables = async (nocoUrl, nocoApp, nocoToken) => {
     })
     if (response.status !== 200) return { status: response.status, message: 'Failed to fetch tables' }
     const data = await response.json()
+    if (!data || !data.data || data.data.length < 1) return { status: 404, message: 'Failed to fetch tables' }
     const tables = data.data.map(item => {
         return { name: item.name, title: item.title }
     })
     return { data: tables }
 }
 
+const getSchema = async (nocoUrl, nocoApp, nocoToken, tableName) => {
+    const response = await fetch(`${nocoUrl}api/collections/${tableName}/fields:list`, {
+        method: 'GET',
+        headers: {
+            'X-Host': 'connect.appnicorn.com',
+            Authorization: `Bearer ${nocoToken}`,
+            'X-App': nocoApp,
+        }
+    })
+    if (response.status !== 200) return { status: response.status, message: 'Failed to fetch schema'}
+    const data = await response.json()
+    if (!data || !data.data || data.data.length < 1) return { status: 404, message: 'Failed to fetch tables' }
+    const schema = data.data.map(item => {
+        let title = item.uiSchema?.title?? null
+        if (title && /t\(\\\"(.+?)\\\"/.test(title)) {
+            title = title.match(/t\(\\\"(.+?)\\\"/)[1]
+        }
+        return { name: item.name, title: title || item.name }
+    })
+    return { data: schema }
+}
+
 module.exports = {
     get,
     getAll,
-    getTables
+    getTables,
+    getSchema
 }

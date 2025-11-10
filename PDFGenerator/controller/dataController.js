@@ -56,10 +56,17 @@ async function getTables(req, res) {
     return res.status(200).json({ data })
 }
 
-
 async function getSchema(req, res) {
-
-    return res.status(500).json({message: ''})
+    const uid = req.body.uid || null
+    const tableName = req.body.tableName || null
+    if (!uid || !tableName) return res.status(400).json({ message: 'Invalid UID or table name' })
+    const userResponse = await user.get(null, uid)
+    if (userResponse.message) return res.status(400).json({ message: userResponse.message })
+    const details = userResponse.record
+    const { nocobase_url, nocobase_token, nocobase_app } = details
+    const { status, message, data } = await userData.getSchema(nocobase_url, nocobase_app, nocobase_token, tableName)
+    if (message) return res.status(status).json({ message })
+    return res.status(200).json({ data })
 }
 
 module.exports = {
