@@ -44,8 +44,8 @@ const getSchema = async (nocoUrl, nocoApp, nocoToken, tableName) => {
     if (!data || !data.data || data.data.length < 1) return { status: 404, message: 'Failed to fetch tables' }
     const schema = data.data.map(item => {
         let title = item.uiSchema?.title?? null
-        if (title && /t\(\\\"(.+?)\\\"/.test(title)) {
-            title = title.match(/t\(\\\"(.+?)\\\"/)[1]
+        if (title && /"(.+?)"/.test(title)) {
+            title = title.match(/"(.+?)"/)[1]
         }
         return { name: item.name, title: title || item.name }
     })
