@@ -104,6 +104,27 @@ async function getAll(req, res) {
     return res.status(200).json({ data: data.data })
 }
 
+async function get(req, res) {
+    const cred = req?.body?.cred ?? { NOCOBASE_TOKEN: process.env.USERNOCOTOKEN, NOCOBASE_APP: process.env.USERNOCOAPP, DATABASE_URI: process.env.USERNOCOHOST }
+    const tempId = req.query.templateId
+    const nocoApp = req.body.nocoApp || false
+    if (!nocoApp) {
+        return res.status(400).json({ message: 'User nocobase not found' })
+    }
+    const response = await template.get(cred, tempId)
+    const data = response.json
+    if (data.message) {
+        if (data.error) {
+            console.log(data.error)
+            return res.status(data.status || 500).json({ message: data.message, error: data.error })
+        } else {
+            console.log(data.message)
+            return res.status(data.status || 500).json({ message: data.message })
+        }
+    }
+    return res.status(200).json({ data: data.data })
+}
+
 //Function to fill data to template
 async function fill(req, res) {
     const schema = joi.object({
@@ -186,5 +207,6 @@ async function fill(req, res) {
 module.exports = {
     create,
     getAll,
+    get,
     fill
 }
