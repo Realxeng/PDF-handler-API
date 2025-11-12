@@ -23,19 +23,19 @@ const upload = async (table_name, pdfFormBuffer, form_fields, nocoApp, cred) => 
     const id = response.json.data.id
 
     const body = {
-        values: [
-            {
-                id,
-                form_fields,
-                nocobase_app: nocoApp,
-                table_name,
-            }
-        ],
-        cred
+        form_fields,
+        nocobase_app: nocoApp,
+        table_name,
     }
 
-    const detailsResponse = await templateNocobase.upload(body, schema)
-    return { data: detailsResponse, id}
+    const filter = {
+        'id': {
+            "$eq": id
+        }
+    }
+
+    const detailsResponse = await templateNocobase.update(body, filter, cred)
+    return { data: detailsResponse, id }
 }
 
 const get = async (cred, tempId) => {
