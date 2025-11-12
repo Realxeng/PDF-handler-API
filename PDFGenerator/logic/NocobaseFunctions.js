@@ -179,7 +179,7 @@ class NocobaseFunctions {
      * @param {{ NOCOBASE_TOKEN: string, NOCOBASE_APP: string, DATABASE_URI: string }} cred - The credentials used to connect to nocobase API
      * @returns 
      */
-    async uploadFile(file, cred) {
+    async uploadFile(filename = 'file', file, cred) {
         const credentials = cred || false
         //Verify all credentials exists
         const { error: credError, value } = validateCredentials(credentials)
@@ -190,7 +190,7 @@ class NocobaseFunctions {
         //Create payload
         const blob = new Blob([file], { type: 'application/pdf' })
         const formData = new FormData()
-        formData.append("file", blob)
+        formData.append("file", blob, filename || 'template')
 
         console.log(`Creating file to nocobase`)
         try {

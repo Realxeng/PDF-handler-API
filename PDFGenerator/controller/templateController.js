@@ -70,7 +70,7 @@ async function create(req, res) {
     //Create the fields template
 
     //Upload the template
-    const response = await template.upload(form.table_name, pdfFormBuffer, form.form_fields, nocoApp, cred)
+    const response = await template.upload(form.name, form.table_name, pdfFormBuffer, form.form_fields, nocoApp, cred)
     //Check response
     if (response.data.status != 201) {
         return res.status(400).json({ message: "Failed to save template", error: response.data.json.message })
