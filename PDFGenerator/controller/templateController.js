@@ -104,7 +104,7 @@ async function getAll(req, res) {
     return res.status(200).json({ data: data.data })
 }
 
-async function getUrl(req, res) {
+async function getFile(req, res) {
     const cred = req?.body?.cred ?? { NOCOBASE_TOKEN: process.env.USERNOCOTOKEN, NOCOBASE_APP: process.env.USERNOCOAPP, DATABASE_URI: process.env.USERNOCOHOST }
     const tempId = req.query.templateId
     if (!tempId) return res.status(400).json({ message: "Missing required parameter: templateId" });
@@ -207,6 +207,6 @@ async function fill(req, res) {
 module.exports = {
     create,
     getAll,
-    getUrl,
+    getFile,
     fill
 }
