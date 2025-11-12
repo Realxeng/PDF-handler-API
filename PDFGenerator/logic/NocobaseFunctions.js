@@ -188,7 +188,7 @@ class NocobaseFunctions {
         const { NOCOBASE_TOKEN, NOCOBASE_APP, DATABASE_URI } = value
 
         //Create payload
-        const blob = new Blob([file], { type: 'application/pdf'})
+        const blob = new Blob([file], { type: 'application/pdf' })
         const formData = new FormData()
         formData.append("file", blob)
 
@@ -272,7 +272,7 @@ class NocobaseFunctions {
         const { error, value } = validateCredentials(cred)
         if (error) {
             console.log(error)
-            return { status: 400, json: { message: 'Invalid nocobase credentials'} , error }
+            return { status: 400, json: { message: 'Invalid nocobase credentials' }, error }
         }
         const { NOCOBASE_TOKEN, NOCOBASE_APP, DATABASE_URI } = value
         const res = await fetch(`${this.nocoUrl}api/${this.nocoTable}:get?filter=${encodeURIComponent(JSON.stringify({ id }))}`, {
@@ -290,6 +290,47 @@ class NocobaseFunctions {
             return { message: data.error }
         }
         return { record: data.data }
+    }
+
+    /**
+     * Update fields in NocoBase
+     * 
+     * @param {Object} data - The new data to be updated to Nocobase
+     * @param {Object} filter - The filter to find the data to be updated
+     * @param {{NOCOBASE_TOKEN: string, NOCOBASE_APP: string, DATABASE_URI: string}} cred - The authentication and connection credentials to connect to NocoBase
+     * @returns {Promise<{ status: number, json: { data?: Object, message?: string, errors?: string }}>}
+     */
+    async update(data, filter, cred) {
+        const credentials = cred || process.env
+        //Verify all credentials exists
+        const { error: credError, value: credValue } = validateCredentials(credentials)
+        if (credError) return { status: 401, json: { message: credError.details.map(d => d.message).join(", "), errors: credError.details } }
+        //Get the credentials
+        const { NOCOBASE_TOKEN, NOCOBASE_APP, DATABASE_URI } = credValue
+
+        console.log(`Updating ${this.name} data to nocobase`)
+        try {
+            const response = await fetch(`${this.nocoUrl}api/${this.nocoTable}:update?filter=${encodeURIComponent(JSON.stringify(filter))}`, {
+                method: 'POST',
+                headers: {
+                    "Content-Type": 'application/json',
+                    'Accept': 'application/json',
+                    Authorization: `Bearer ${NOCOBASE_TOKEN}`,
+                    'X-App': NOCOBASE_APP,
+                    'X-Host': DATABASE_URI,
+                },
+                body: JSON.stringify(data)
+            })
+            const responseJson = await response.json()
+            //Check for errors
+            if (responseJson.errors) {
+                return { status: 400, json: { message: responseJson.errors[0].message, errors: responseJson.errors } }
+            }
+            return { status: 201, json: { data: responseJson.data } }
+        } catch (error) {
+            console.log(error)
+            return { status: 500, json: { message: `Error updating ${this.name} on nocobase` } }
+        }
     }
 }
 
