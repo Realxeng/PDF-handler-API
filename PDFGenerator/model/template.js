@@ -1,17 +1,19 @@
+const joi = require('joi')
 const NocobaseFunctions = require('../logic/NocobaseFunctions')
 const templateNocobase = new NocobaseFunctions('templates', 'Templates', process.env.USERNOCOURL || 'http://localhost:13000/')
 
-const upload = async(table_name, pdfFormBuffer, form_fields, nocoApp, cred) => {
+const upload = async (table_name, pdfFormBuffer, form_fields, nocoApp, cred) => {
     const schema = joi.object({
-        form_fields: joi.array().items(joi.object({
-            field: joi.object({
-                name: joi.string(),
-            }),
-            data_field: joi.string()
-        }).unknown(false)).min(1),
-        nocobase_app: joi.string(),
-        table_name: joi.string(),
-    }).unknown(false)
+        values: joi.array().items(joi.object({
+            form_fields: joi.array().items(joi.object({
+                field: joi.object(),
+                data_field: joi.string()
+            }).unknown(true)).min(1),
+            nocobase_app: joi.string(),
+            table_name: joi.string(),
+        }).unknown(true)),
+        cred: joi.object()
+    }).unknown(true)
 
     const response = await templateNocobase.uploadFile(pdfFormBuffer, cred)
     if (response.json.message) {
@@ -32,16 +34,16 @@ const upload = async(table_name, pdfFormBuffer, form_fields, nocoApp, cred) => {
         cred
     }
 
-    const detailsResponse = await templateNocobase.upload(body, cred)
-    return detailsResponse
+    const detailsResponse = await templateNocobase.upload(body, schema)
+    return { data: detailsResponse, id}
 }
 
-const get = async(cred, tempId) => {
+const get = async (cred, tempId) => {
     const response = await templateNocobase.get(cred, tempId)
     return response
 }
 
-const getAll = async(cred, nocoApp) => {
+const getAll = async (cred, nocoApp) => {
     const filter = { nocobase_app: nocoApp }
     const response = await templateNocobase.getAll(cred, filter)
     return response

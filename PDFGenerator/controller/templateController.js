@@ -32,7 +32,7 @@ async function create(req, res) {
     if (!req.file || !req.file.buffer) {
         return res.status(400).json({ message: 'No PDF file found' })
     }
-    if (req.file.mimetype !== 'application/json') {
+    if (req.file.mimetype !== 'application/pdf') {
         return res.status(400).json({ message: "File is not a PDF file" })
     }
     //Get the pdf file
@@ -47,7 +47,7 @@ async function create(req, res) {
     }
 
     //Validate form fields
-    const { error, value } = schema.validate(form, { abortEarly: false })
+    const { error, value } = schema.validate(JSON.parse(form), { abortEarly: false })
     //Check validation error
     if (error) {
         console.log(error)
@@ -62,7 +62,7 @@ async function create(req, res) {
 
     //Build the form inside pdf
     form.form_fields.forEach((field, index) => {
-        PDFForm.addTextBox(...field.field)
+        PDFForm.addTextBox(...Object.values(field.field))
     });
 
     //Export the pdf template with form
@@ -72,14 +72,14 @@ async function create(req, res) {
     //Upload the template
     const response = await template.upload(form.table_name, pdfFormBuffer, form.form_fields, nocoApp, cred)
     //Check response
-    if (response.status != 201) {
-        return res.status(400).json({ message: "Failed to save template", error: response.json.message })
+    if (response.data.status != 201) {
+        return res.status(400).json({ message: "Failed to save template", error: response.data.json.message })
     }
     //Return the template
     res.setHeader('Content-Type', 'application/pdf')
     res.setHeader('Content-Disposition', `attachment; filename="${form.name || 'template'}.pdf"`)
-    res.setHeader('X-File-ID', 'ID') // To-do: get file id after upload
-    res.download(pdfFormBuffer)
+    res.setHeader('X-File-ID', response.id) // To-do: get file id after upload
+    //res.download(new Blob([pdfFormBuffer]), 'template.pdf')
     return res.status(201).send(pdfFormBuffer)
 }
 

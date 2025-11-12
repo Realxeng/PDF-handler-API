@@ -48,10 +48,11 @@ class NocobaseFunctions {
         }
 
         //Get existing data
-        const { records: nocoData, message } = await this.getAll(cred)
-        if (message) {
-            return { status: 500, json: { message } }
+        const { status, json } = await this.getAll(cred)
+        if (status !== 200) {
+            return { status, json }
         }
+        const nocoData = json.data
         const existingIdset = new Set(nocoData.map(d => d.id))
 
         //Split the data into create and update
@@ -189,7 +190,7 @@ class NocobaseFunctions {
         //Create payload
         const blob = new Blob([file], { type: 'application/pdf'})
         const formData = new FormData()
-        formData.append("file", blob, 'form.pdf')
+        formData.append("file", blob)
 
         console.log(`Creating file to nocobase`)
         try {
@@ -221,7 +222,7 @@ class NocobaseFunctions {
      * 
      * @param {{NOCOBASE_TOKEN: string, NOCOBASE_APP: string, DATABASE_URI: string}} cred - The authentication and connection credentials to connect to NocoBase
      * @param {Object | null} filter - The filter to be used when sending the get request
-     * @returns {Promise<{ records?: object[], message?: string }>}
+     * @returns {Promise<{ status: number, json: { data?: object[], message?: string, error?: object }}>}
      */
     async getAll(cred, filter = null) {
         const { error, value } = validateCredentials(cred)
