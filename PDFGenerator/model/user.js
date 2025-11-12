@@ -2,6 +2,7 @@ const NocobaseFunctions = require('../logic/NocobaseFunctions')
 const user = new NocobaseFunctions('users', 'Users', process.env.USERNOCOURL)
 
 async function get(credentials, uid) {
+    if (!uid) return null
     const cred = credentials || { NOCOBASE_TOKEN: process.env.USERNOCOTOKEN, NOCOBASE_APP: process.env.USERNOCOAPP, DATABASE_URI: process.env.USERNOCOHOST }
     const response = await user.get(cred, uid)
     return response
