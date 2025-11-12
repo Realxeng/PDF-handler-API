@@ -1,5 +1,6 @@
 const joi = require("joi");
 const _ = require("lodash");
+const { buffer } = require("stream/consumers");
 const util = require("util");
 /**
  * A class to do CRUD operation into nocobase data source
@@ -183,20 +184,23 @@ class NocobaseFunctions {
         const { error: credError, value } = validateCredentials(credentials)
         if (credError) return { status: 401, json: { message: credError.details.map(d => d.message).join(", "), errors: credError.details } }
 
+        const { NOCOBASE_TOKEN, NOCOBASE_APP, DATABASE_URI } = value
+
         //Create payload
+        const blob = new Blob([file], { type: 'application/pdf'})
         const formData = new FormData()
-        formData.append("file", file)
+        formData.append("file", blob, 'form.pdf')
 
         console.log(`Creating file to nocobase`)
         try {
             const response = await fetch(`${this.nocoUrl}api/${this.nocoTable}:create`, {
                 method: 'POST',
                 headers: {
-                    "Content-Type": 'application/json',
+                    //"Content-Type": 'multipart/form-data',
                     'Accept': 'application/json',
                     Authorization: `Bearer ${NOCOBASE_TOKEN}`,
                     'X-App': NOCOBASE_APP,
-                    'X-Host': DATABASE_URI,
+                    'X-Host': 'connect.appnicorn.com'
                 },
                 body: formData
             })
