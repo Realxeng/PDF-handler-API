@@ -113,7 +113,12 @@ async function getUrl(req, res) {
         if (!response || !response.record) return res.status(404).json({ message: "Template not found" });
         const data = response.record
         if (!data.url) return res.status(404).json({ message: "PDF URL not found in template record" });
-        return res.status(200).json({ data: data.url })
+        const pdfUrl = data.url
+        const fullUrl = `${process.env.USERNOCOURL}${pdfUrl.substring(1)}`
+        const pdfResponse = await fetch(fullUrl);
+        if (!pdfResponse.ok) throw new Error(`Failed to fetch PDF: ${pdfResponse.statusText}`);
+        const buffer = await pdfResponse.arrayBuffer();
+        res.status(200).send(Buffer.from(buffer));
     } catch (error) {
         console.error("Error fetching template:", error);
         return res.status(500).json({ message: "Failed to get template", error: error.message });
