@@ -18,7 +18,7 @@ app.use(CORS({
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type", "Accept", "Authorization"]
 }));
-app.post('/fillpdf', upload.single("pdf"), template.fill)
+
 app.use(express.json())
 //Route to convert JSON to PDF
 app.post('/jsontopdf', JSONtoPDF)
@@ -28,7 +28,7 @@ app.post('/jsontopdf', JSONtoPDF)
  */
 //UI for creating tagging the textbox
 app.post('/createpdf', upload.single("pdf"), template.create)
-
+app.post('/fillpdf', upload.single("pdf"), template.fill)
 app.post('/templates/all', template.getAll)
 app.get('/templates/getFile', template.getFile)
 app.get('/user/noco_app', user.getNocoApp)
