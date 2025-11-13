@@ -129,8 +129,9 @@ async function getFile(req, res) {
 async function fill(req, res) {
     const schema = joi.object({
         id: joi.number().integer().required(),
-        formName: joi.string(),
-        formFields: joi.array().items(joi.object({
+        name: joi.string(),
+        table_name: joi.string(),
+        form_fields: joi.array().items(joi.object({
             field: joi.object({
                 name: joi.string(),
                 pageNum: joi.number().integer(),
@@ -140,18 +141,20 @@ async function fill(req, res) {
                 height: joi.number()
             }),
             dataField: joi.string()
-        }).unknown(false)).min(1)
-    }).unknown(false)
+        }).unknown(true)).min(1)
+    }).unknown(true)
 
     try {
         const pdfBuffer = req.file.buffer
         const tempId = req.query.templateId
         const custId = req.query.customerId
+        const dataId = req.query.dataId
         const cred = req.body.cred || null
 
         if (!pdfBuffer) return res.status(400).json({ message: 'No PDF file received' })
         if (!tempId) return res.status(400).json({ message: "No template ID received" })
         if (!custId) return res.status(400).json({ message: "No customer ID received" })
+        if (!dataId) return res.status(400).json({ message: "No data ID received "})
         
         //Get user data Nocobase Credentials
         const userResponse = await user.get(cred, custId)
@@ -172,25 +175,29 @@ async function fill(req, res) {
         
         const templateResponse = await template.get({ NOCOBASE_TOKEN: process.env.USERNOCOTOKEN, NOCOBASE_APP: process.env.USERNOCOAPP, DATABASE_URI: process.env.USERNOCOHOST }, tempId)
         if (!templateResponse.record) return res.status(400).json({ message: "No template found" })
-
         const { error, value: pdfTemplate } = schema.validate(templateResponse.record, { abortEarly: false })
         if (error) {
             console.log(error)
             return res.status(400).json({ message: "Invalid template structure", error })
         }
 
-        const data = await customer.get(pdfTemplate.tableName, userResponse.record.nocobase_url, userCred, custId)
-        if (!data.record) return res.status(400).json({ message: "No customer found" })
+        const data = await customer.get(pdfTemplate.table_name, userResponse.record.nocobase_url, userCred, dataId)
+        if (!data.record) {
+            return res.status(400).json({ message: "No customer found" })
+        }
 
         const PDFForm = await PDFHelper.load(pdfBuffer)
-        pdfTemplate.formFields.forEach(({ field, dataField }) => {
-            const valueToFill = data.record[dataField]
-            if (valueToFill !== undefined) {
+        pdfTemplate.form_fields.forEach(({ field, data_field }) => {
+            if (!field || !data_field) return;
+            const valueToFill = data.record[data_field]
+            if (valueToFill !== undefined && valueToFill !== null) {
                 try {
-                    PDFForm.fillData(field.name, valueToFill)
+                    PDFForm.fillData(field.name, String(valueToFill))
                 } catch (err) {
                     console.log(`Field not found: ${field.name}`)
                 }
+            } else {
+                console.log(`No data found for field: ${data_field}`)
             }
         })
         const outputBuffer = await PDFForm.exportFlatten()
