@@ -324,6 +324,7 @@ class NocobaseFunctions {
             const responseJson = await response.json()
             //Check for errors
             if (responseJson.errors) {
+                console.log(responseJson.errors)
                 return { status: 400, json: { message: responseJson.errors[0].message, errors: responseJson.errors } }
             }
             return { status: 201, json: { data: responseJson.data } }

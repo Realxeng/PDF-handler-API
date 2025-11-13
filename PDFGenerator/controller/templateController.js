@@ -72,16 +72,17 @@ async function create(req, res) {
     //Upload the template
     const response = await template.upload(form.name, form.table_name, pdfFormBuffer, form.form_fields, nocoApp, cred)
     //Check response
-    if (response.status != 201) {
+    if (response.data.status != 201) {
         return res.status(400).json({ message: "Failed to save template", error: response.data.json.message })
     }
     //Return the template
     res.setHeader('Content-Type', 'application/pdf')
     res.setHeader('Content-Disposition', `attachment; filename="${form.name || 'template'}.pdf"`)
+    res.setHeader('Access-Control-Expose-Headers', 'X-File-ID, X-File_title, X-File_table_name, X-File_size')
     res.setHeader('X-File-ID', response.id)
-    res.setHeader('X-File_title', response.data.json.data.title)
-    res.setHeader('X-File_table_name', response.data.json.data.table_name)
-    res.setHeader('X-File_size', response.data.json.data.size)
+    res.setHeader('X-File_title', response.data.json.data[0].title)
+    res.setHeader('X-File_table_name', response.data.json.data[0].table_name)
+    res.setHeader('X-File_size', response.data.json.data[0].size)
     //res.download(new Blob([pdfFormBuffer]), 'template.pdf')
     return res.status(201).send(pdfFormBuffer)
 }
