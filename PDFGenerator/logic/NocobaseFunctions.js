@@ -254,8 +254,8 @@ class NocobaseFunctions {
             console.log(error)
             return { status: 500, json: { message: `Failed to get ${this.nocoTable}`, error: error } }
         }
-        if (data.error) {
-            return { status: 500, json: { message: data.error } }
+        if (data.errors) {
+            return { status: 500, json: { message: data.errors } }
         }
         return { status: 200, json: { data: records } }
     }
@@ -275,7 +275,14 @@ class NocobaseFunctions {
             return { status: 400, json: { message: 'Invalid nocobase credentials' }, error }
         }
         const { NOCOBASE_TOKEN, NOCOBASE_APP, DATABASE_URI } = value
-        const res = await fetch(`${this.nocoUrl}api/${this.nocoTable}:get?filter=${encodeURIComponent(JSON.stringify({ id }))}`, {
+        let baseUrl = `${this.nocoUrl}api/${this.nocoTable}:get`;
+        const isNested = /^.+\/\d+\/.+$/.test(this.nocoTable);
+        const filterValue = isNested
+            ? `${id}` // plain id
+            : encodeURIComponent(JSON.stringify({ id }));
+        const url = `${baseUrl}?filter=${filterValue}`;
+
+        const res = await fetch(url, {
             method: 'GET',
             headers: {
                 "Content-Type": 'application/json',

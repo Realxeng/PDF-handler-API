@@ -4,6 +4,7 @@ const template = require('../model/template')
 const customer = require('../model/data')
 const user = require('../model/user')
 const { StandardFonts } = require('pdf-lib')
+const NocobaseFunctions = require('../logic/NocobaseFunctions')
 
 //Function to create a template
 async function create(req, res) {
@@ -177,25 +178,127 @@ async function fill(req, res) {
         if (!data.record) {
             return res.status(400).json({ message: "No customer found" })
         }
+        const details = userResponse.record
+        const { nocobase_url, nocobase_token, nocobase_app } = details
+        const childData = await customer.getSchema(nocobase_url, nocobase_app, nocobase_token, pdfTemplate.table_name)
+        for (const childDataItem of childData.data) {
+            if (childDataItem.child) {
+                try {
+                    const child = new NocobaseFunctions(`${pdfTemplate.table_name}/${dataId}/${childDataItem.name}`,childDataItem.name, userResponse.record.nocobase_url)
+                    let cf = await child.getAll(userCred);
+                    if (cf.status == 500 || cf.json?.error?.errors?.[0]?.message === "repository.findAndCount is not a function") {
+                        cf = await child.get(userCred, 1);
+                    }
+                    data.record[childDataItem.name] = {
+                        json: cf.json ?? null,
+                        record: cf.record ?? null
+                    };
+                } catch (err) {
+                    console.error(`Error fetching ${childDataItem.name}:`, err);
+                    return res.status(500).json({ message: "Error fetching child data" });
+                }
+            }
+        }
+        for (const key of Object.keys(data.record)) {
+            const val = data.record[key];
+            if (val && typeof val === "object" && ("json" in val || "record" in val)) {
+                let flattened = null;
+
+                if (val.json?.data) {
+                    flattened = val.json.data;
+                } else if (val.record) {
+                    flattened = val.record;
+                } else if (val.json) {
+                    flattened = val.json;
+                }
+                data.record[key] = flattened;
+            }
+        }
+
+        function resolveNestedPath(obj, fieldName) {
+            // Recursive search for the field
+            function search(current, path = "") {
+                if (current == null) return null;
+
+                if (typeof current === "object" && !Array.isArray(current)) {
+                    // Iterate object keys
+                    for (const key of Object.keys(current)) {
+                        const result = search(current[key], path ? `${path}.${key}` : key);
+                        if (result) return result;
+                    }
+                } else if (Array.isArray(current)) {
+                    // Iterate array items
+                    for (let i = 0; i < current.length; i++) {
+                        const result = search(current[i], `${path}[${i}]`);
+                        if (result) return result;
+                    }
+                } else {
+                    // Primitive value
+                    if (path.endsWith(fieldName)) return path;
+                }
+
+                return null;
+            }
+
+            return search(obj);
+        }
+
+
+        function getNestedValue(obj, path) {
+            if (!obj || !path) return undefined;
+
+            // Convert bracket notation [0] to dot notation
+            path = path.replace(/\[(\d+)\]/g, '.$1');
+
+            const keys = path.split('.');
+            let current = obj;
+
+            for (const key of keys) {
+                if (current == null) return undefined;
+                current = current[key];
+            }
+
+            return current;
+        }
+
+        function preparePDFValue(value) {
+            if (value === null || value === undefined) return "";
+
+            if (typeof value === "string" || typeof value === "number") {
+                return value;
+            }
+
+            try {
+                return JSON.stringify(value);
+            } catch {
+                return String(value);
+            }
+        }
 
         const PDFForm = await PDFHelper.load(pdfBuffer)
         const font = await PDFForm.embedFont(StandardFonts.TimesRoman)
         let truncatedFields = []
         pdfTemplate.form_fields.forEach(({ field, data_field }) => {
             if (!field || !data_field) return;
-            const valueToFill = data.record[data_field]
-            if (valueToFill !== undefined && valueToFill !== null) {
-                try {
-                    const limit = PDFForm.fillData(field, valueToFill, font, 12)
-                    if (limit) {
-                        truncatedFields.push(field.name)
-                    }
-                } catch (err) {
-                    console.log(err)
-                    console.log(`Field not found: ${field.name}`)
+            const nestedPath = resolveNestedPath(data.record, data_field);
+            const rawValue = nestedPath ? getNestedValue(data.record, nestedPath) : null;
+
+            if (rawValue === undefined || rawValue === null) {
+                console.log(`No data found for field: ${data_field}`);
+                return;
+            }
+            const valueToFill = preparePDFValue(rawValue);
+
+            try {
+                const limit = PDFForm.fillData(field, valueToFill, font, 12);
+
+                if (limit) {
+                    truncatedFields.push(field.name);
                 }
-            } else {
-                console.log(`No data found for field: ${data_field}`)
+
+            } catch (err) {
+                console.log(err);
+                console.log(`Field not found: ${field.name}`);
             }
         })
         const outputBuffer = await PDFForm.exportFlatten()
