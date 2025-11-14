@@ -15,14 +15,18 @@ const getAll = async (tableName, nocoUrl, cred) => {
 const getTables = async (nocoUrl, nocoApp, nocoToken) => {
     const tableScehma = new NocobaseFunctions('collections', 'Collections', nocoUrl)
     const cred = { NOCOBASE_TOKEN: nocoToken, NOCOBASE_APP: nocoApp, DATABASE_URI: 'connect.appnicorn.com'}
-    const response = tableScehma.getAll(cred)
+    const response = await tableScehma.getAll(cred)
     if (response.status !== 200) return { status: response.status, message: 'Failed to fetch tables' }
     const data = await response.json
     if (!data || !data.data || data.data.length < 1) return { status: 404, message: 'Failed to fetch tables' }
     const tables = data.data.map(item => {
-        return { name: item.name, title: item.title }
+        let title = item.title
+        if (title && /"(.+?)"/.test(title)) {
+            title = title.match(/"(.+?)"/)[1];
+        }
+        return { name: item.name, title }
     })
-    return { data: tables }
+    return { status: 200, data: tables }
 }
 
 const getSchema = async (nocoUrl, nocoApp, nocoToken, tableName, depth = 0, visited = new Set()) => {
@@ -31,19 +35,17 @@ const getSchema = async (nocoUrl, nocoApp, nocoToken, tableName, depth = 0, visi
     }
     visited.add(tableName);
 
-    const response = await fetch(`${nocoUrl}api/collections/${tableName}/fields:list`, {
-        method: 'GET',
-        headers: {
-            'X-Host': 'connect.appnicorn.com',
-            Authorization: `Bearer ${nocoToken}`,
-            'X-App': nocoApp,
-        }
-    })
+    const schemaList = new NocobaseFunctions(`collections/${tableName}/fields`, tableName, nocoUrl)
+
+    const cred = { NOCOBASE_TOKEN: nocoToken, NOCOBASE_APP: nocoApp, DATABASE_URI: 'connect.appnicorn.com'}
+
+    const response = await schemaList.getAll(cred)
+
     if (response.status !== 200) {
         visited.delete(tableName)
         return { status: response.status, message: 'Failed to fetch schema'}
     }
-    const data = await response.json()
+    const data = response.json
     if (!data || !data.data || data.data.length < 1) {
         visited.delete(tableName)
         return { status: 404, message: 'Failed to fetch tables' }
