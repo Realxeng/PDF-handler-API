@@ -30,7 +30,12 @@ const getTables = async (nocoUrl, nocoApp, nocoToken) => {
     return { data: tables }
 }
 
-const getSchema = async (nocoUrl, nocoApp, nocoToken, tableName) => {
+const getSchema = async (nocoUrl, nocoApp, nocoToken, tableName, depth = 0, visited = new Set()) => {
+    if (visited.has(tableName)) {
+        return { status: 409, message: `Circular reference detected for table: ${tableName}` };
+    }
+    visited.add(tableName);
+
     const response = await fetch(`${nocoUrl}api/collections/${tableName}/fields:list`, {
         method: 'GET',
         headers: {
@@ -39,16 +44,54 @@ const getSchema = async (nocoUrl, nocoApp, nocoToken, tableName) => {
             'X-App': nocoApp,
         }
     })
-    if (response.status !== 200) return { status: response.status, message: 'Failed to fetch schema'}
+    if (response.status !== 200) {
+        visited.delete(tableName)
+        return { status: response.status, message: 'Failed to fetch schema'}
+    }
     const data = await response.json()
-    if (!data || !data.data || data.data.length < 1) return { status: 404, message: 'Failed to fetch tables' }
-    const schema = data.data.map(item => {
-        let title = item.uiSchema?.title?? null
+    if (!data || !data.data || data.data.length < 1) {
+        visited.delete(tableName)
+        return { status: 404, message: 'Failed to fetch tables' }
+    }
+
+    const schema = []
+    for (const item of data.data) {
+        let title = item.uiSchema?.title ?? null
         if (title && /"(.+?)"/.test(title)) {
-            title = title.match(/"(.+?)"/)[1]
+            title = title.match(/"(.+?)"/)[1];
         }
-        return { name: item.name, title: title || item.name }
-    })
+        const fieldSchema = {
+            name: item.name,
+            title: title || item.name,
+        };
+        if (item.target && item.target !== "users") {
+            const childSchema = await getSchema(
+                nocoUrl,
+                nocoApp,
+                nocoToken,
+                item.target,
+                depth + 1,
+                visited
+            );
+
+            if (childSchema.data) {
+                fieldSchema.child = {
+                    table: item.target,
+                    fields: childSchema.data 
+                };
+            } else {
+                fieldSchema.child = {
+                    table: item.target,
+                    error: childSchema.message
+                };
+            }
+        }
+        schema.push(fieldSchema);
+    }
+    visited.delete(tableName)
+    // if (depth === 0) {
+    //     console.log(JSON.stringify(schema, null, 2));
+    // }
     return { data: schema }
 }
 
