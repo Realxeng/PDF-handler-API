@@ -49,6 +49,7 @@ class PDFHelper {
      * @returns {void}
      */
     fillData(field, data, font, fontSize) {
+        if (typeof data !== 'string') data = data.toString()
         const page = this.pdf.getPage(field.pageNum)
         const { limit, text } = computeDrawTextHeight(data, font, fontSize, field.width, fontSize, field.height)
         page.drawText(text, { x: field.x, y: field.y, font: font, size: fontSize, maxWidth: field.width, lineHeight: fontSize, wordBreaks: [...data] })
