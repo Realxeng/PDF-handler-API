@@ -3,6 +3,7 @@ const PDFHelper = require('../logic/PDFHelper')
 const template = require('../model/template')
 const customer = require('../model/data')
 const user = require('../model/user')
+const { StandardFonts } = require('pdf-lib')
 
 //Function to create a template
 async function create(req, res) {
@@ -83,7 +84,6 @@ async function create(req, res) {
     res.setHeader('X-File_title', response.data.json.data[0].title)
     res.setHeader('X-File_table_name', response.data.json.data[0].table_name)
     res.setHeader('X-File_size', response.data.json.data[0].size)
-    //res.download(new Blob([pdfFormBuffer]), 'template.pdf')
     return res.status(201).send(pdfFormBuffer)
 }
 
@@ -191,13 +191,15 @@ async function fill(req, res) {
         }
 
         const PDFForm = await PDFHelper.load(pdfBuffer)
+        const font = await PDFForm.embedFont(StandardFonts.TimesRoman)
         pdfTemplate.form_fields.forEach(({ field, data_field }) => {
             if (!field || !data_field) return;
             const valueToFill = data.record[data_field]
             if (valueToFill !== undefined && valueToFill !== null) {
                 try {
-                    PDFForm.fillData(field.name, String(valueToFill))
+                    PDFForm.fillData(field.name, String(valueToFill), font, 9)
                 } catch (err) {
+                    console.log(err)
                     console.log(`Field not found: ${field.name}`)
                 }
             } else {

@@ -29,7 +29,7 @@ async function verifyUser(acc, pwd){
         if (!response.ok) {
             const errorText = await response.text();
             console.error("NocoBase login failed:", errorText);
-            throw new Error("Invalid credentials or failed to connect to NocoBase.");
+            throw new Error("Invalid credentials.");
         }
         const data = await response.json();
         return {

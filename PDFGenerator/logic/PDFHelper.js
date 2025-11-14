@@ -1,4 +1,5 @@
-const { PDFDocument, PDFForm } = require('pdf-lib')
+const { PDFDocument, PDFForm, StandardFonts } = require('pdf-lib')
+const { fontSize } = require('pdfkit')
 /**
  * A helper class to build pdf forms
  */
@@ -47,9 +48,14 @@ class PDFHelper {
      * @param {(string | number | boolean)} data The data to be placed into the field
      * @returns {void}
      */
-    fillData(fieldName, data) {
+    fillData(fieldName, data, font, size) {
         const field = this.form.getTextField(fieldName)
         field.setText(data)
+        field.acroField.setDefaultAppearance('/TiRo 9 Tf 0 g')
+    }
+
+    async embedFont(font) {
+        return await this.pdf.embedFont(font)
     }
 
     /**
