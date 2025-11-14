@@ -62,9 +62,9 @@ async function create(req, res) {
     const PDFForm = await PDFHelper.load(pdfBuffer)
 
     //Build the form inside pdf
-    form.form_fields.forEach((field, index) => {
-        PDFForm.addTextBox(...Object.values(field.field))
-    });
+    // form.form_fields.forEach((field, index) => {
+    //     PDFForm.addTextBox(...Object.values(field.field))
+    // });
 
     //Export the pdf template with form
     const pdfFormBuffer = await PDFForm.export()
@@ -192,12 +192,16 @@ async function fill(req, res) {
 
         const PDFForm = await PDFHelper.load(pdfBuffer)
         const font = await PDFForm.embedFont(StandardFonts.TimesRoman)
+        let truncatedFields = []
         pdfTemplate.form_fields.forEach(({ field, data_field }) => {
             if (!field || !data_field) return;
             const valueToFill = data.record[data_field]
             if (valueToFill !== undefined && valueToFill !== null) {
                 try {
-                    PDFForm.fillData(field.name, String(valueToFill), font, 9)
+                    const limit = PDFForm.fillData(field, valueToFill, font, 12)
+                    if (limit) {
+                        truncatedFields.push(field.name)
+                    }
                 } catch (err) {
                     console.log(err)
                     console.log(`Field not found: ${field.name}`)
@@ -207,8 +211,11 @@ async function fill(req, res) {
             }
         })
         const outputBuffer = await PDFForm.exportFlatten()
+
+        res.setHeader('Access-Control-Expose-Headers', 'Truncated-Fields')
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", `attachment; filename="filled.pdf"`);
+        if (truncatedFields.length > 0) res.setHeader('Truncated-Fields', JSON.stringify(truncatedFields))
         return res.status(200).send(outputBuffer)
 
     } catch (err) {

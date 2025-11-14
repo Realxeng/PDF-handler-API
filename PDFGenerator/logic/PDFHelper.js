@@ -48,10 +48,11 @@ class PDFHelper {
      * @param {(string | number | boolean)} data The data to be placed into the field
      * @returns {void}
      */
-    fillData(fieldName, data, font, size) {
-        const field = this.form.getTextField(fieldName)
-        field.setText(data)
-        field.acroField.setDefaultAppearance('/TiRo 9 Tf 0 g')
+    fillData(field, data, font, fontSize) {
+        const page = this.pdf.getPage(field.pageNum)
+        const { limit, text } = computeDrawTextHeight(data, font, fontSize, field.width, fontSize, field.height)
+        page.drawText(text, { x: field.x, y: field.y, font: font, size: fontSize, maxWidth: field.width, lineHeight: fontSize, wordBreaks: [...data] })
+        if (limit) return limit
     }
 
     async embedFont(font) {
@@ -76,6 +77,46 @@ class PDFHelper {
         const pdfFormBuffer = await this.pdf.save()
         return pdfFormBuffer
     }
+}
+
+function computeDrawTextHeight(
+    text,
+    font,
+    fontSize,
+    maxWidth,
+    lineHeight = fontSize,
+    maxHeight,
+) {
+    const lines = [];
+    let line = '';
+
+    for (const ch of text) {
+        const testLine = line + ch;
+        const testWidth = font.widthOfTextAtSize(testLine, fontSize);
+
+        if (testWidth > maxWidth) {
+            if ((lines.length + 1) * lineHeight > maxHeight) {
+                const slicedLine = lines[lines.length - 1].slice(0, -2)
+                lines[lines.length - 1] = slicedLine + '...'
+                return { limit: true, text: lines.join('') }
+            }
+            lines.push(line);
+            line = ch;
+        } else {
+            line = testLine;
+        }
+    }
+
+    if (line) {
+        if ((lines.length + 1) * lineHeight > maxHeight) {
+            const slicedLine = lines[lines.length - 1].slice(0, -3)
+            lines[lines.length - 1] = slicedLine + '...'
+            return { limit: true, text: lines.join('') }
+        }
+        lines.push(line);
+    }
+
+    return { limit: false, text: lines.join('') };
 }
 
 module.exports = PDFHelper
