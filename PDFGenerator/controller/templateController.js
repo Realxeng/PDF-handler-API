@@ -58,20 +58,8 @@ async function create(req, res) {
     //Get validated form fields
     form = value
 
-    //Load the pdf
-    const PDFForm = await PDFHelper.load(pdfBuffer)
-
-    //Build the form inside pdf
-    // form.form_fields.forEach((field, index) => {
-    //     PDFForm.addTextBox(...Object.values(field.field))
-    // });
-
-    //Export the pdf template with form
-    const pdfFormBuffer = await PDFForm.export()
-    //Create the fields template
-
     //Upload the template
-    const response = await template.upload(form.name, form.table_name, pdfFormBuffer, form.form_fields, nocoApp, cred)
+    const response = await template.upload(form.name, form.table_name, pdfBuffer, form.form_fields, nocoApp, cred)
     //Check response
     if (response.data.status != 201) {
         return res.status(400).json({ message: "Failed to save template", error: response.data.json.message })
@@ -84,7 +72,7 @@ async function create(req, res) {
     res.setHeader('X-File_title', response.data.json.data[0].title)
     res.setHeader('X-File_table_name', response.data.json.data[0].table_name)
     res.setHeader('X-File_size', response.data.json.data[0].size)
-    return res.status(201).send(pdfFormBuffer)
+    return res.status(201).send(pdfBuffer)
 }
 
 //Function to get all templates
