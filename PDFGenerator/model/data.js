@@ -13,16 +13,11 @@ const getAll = async (tableName, nocoUrl, cred) => {
 }
 
 const getTables = async (nocoUrl, nocoApp, nocoToken) => {
-    const response = await fetch(`${nocoUrl}api/collections:list`, {
-        method: 'GET',
-        headers: {
-            'X-Host': 'connect.appnicorn.com',
-            Authorization: `Bearer ${nocoToken}`,
-            'X-App': nocoApp,
-        }
-    })
+    const tableScehma = new NocobaseFunctions('collections', 'Collections', nocoUrl)
+    const cred = { NOCOBASE_TOKEN: nocoToken, NOCOBASE_APP: nocoApp, DATABASE_URI: 'connect.appnicorn.com'}
+    const response = tableScehma.getAll(cred)
     if (response.status !== 200) return { status: response.status, message: 'Failed to fetch tables' }
-    const data = await response.json()
+    const data = await response.json
     if (!data || !data.data || data.data.length < 1) return { status: 404, message: 'Failed to fetch tables' }
     const tables = data.data.map(item => {
         return { name: item.name, title: item.title }
