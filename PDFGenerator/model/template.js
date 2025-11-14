@@ -5,7 +5,7 @@ const templateNocobase = new NocobaseFunctions('templates', 'Templates', process
 const upload = async (name, table_name, pdfFormBuffer, form_fields, nocoApp, cred) => {
     const response = await templateNocobase.uploadFile(name, pdfFormBuffer, cred)
     if (response.json.message) {
-        return response
+        return { data: response }
     }
 
     const id = response.json.data.id
